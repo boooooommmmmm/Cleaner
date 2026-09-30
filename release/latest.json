@@ -1,11 +1,11 @@
 {
-  "version": "0.16.2",
-  "asset": "CleanSweep-win-x64-0.16.2.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.16.2/CleanSweep-win-x64-0.16.2.zip",
-  "sha256": "f557d374c5e9b75ade3edc234db3b822e2722325eedc484a7cd1fd959ebfa048",
-  "size": 63172759,
-  "notes": "v0.16.2：侧栏按清理 / 空间 / 优化 / 管理分组可折叠，隔离区与设置固定在底部；导航列表可滚动",
-  "generated": "2026-09-30T16:49:09Z",
+  "version": "0.17.0",
+  "asset": "CleanSweep-win-x64-0.17.0.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.17.0/CleanSweep-win-x64-0.17.0.zip",
+  "sha256": "553be6c32ca45f0aff8d469cc44eb0acb7b4013eb988730a3934c375fd3d7ae0",
+  "size": 63265737,
+  "notes": "v0.17.0：新增硬件状态页（CPU、内存、ACPI 温区、NVIDIA 显卡、磁盘 S.M.A.R.T.、电池、上次内存诊断，可自动刷新）与系统自带工具入口；隔离区按磁盘概览卡，可按盘、批次、关键字筛选；清理结果每项可展开依据、影响、恢复方式、执行前核对，支持按名称或路径筛选与风险分布统计；侧栏补上图标。",
+  "generated": "2026-09-30T17:28:37Z",
   "keyId": "release-2026-09",
-  "signature": "toO73Ka9jfExJSpn0lfa3UGuS8W/GOBpGTiBonRj+VaTlfYcT2/URFHE+awI5WyI1FyfHVABY1JR2MYf2yFhiA=="
+  "signature": "7lY2CNo1k5atqXAMvHufby++SqdBWVqPdO/6bTXKWSrVIvt/GgCcHYFqh91CXsrxjrZio9f5gc/b8hzmlTTmbA=="
 }
