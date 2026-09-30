@@ -84,8 +84,8 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.16.1"; git push
-# 在 GitHub 创建 tag v0.16.1 的 Release，上传 publish/CleanSweep-win-x64-0.16.1.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.16.2"; git push
+# 在 GitHub 创建 tag v0.16.2 的 Release，上传 publish/CleanSweep-win-x64-0.16.2.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。

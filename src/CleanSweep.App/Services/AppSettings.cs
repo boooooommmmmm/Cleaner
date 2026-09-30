@@ -53,6 +53,9 @@ public sealed class AppSettings
     /// <summary>启动时在后台检查程序与数据集更新（只提示，不自动安装）。</summary>
     public bool CheckUpdatesOnStartup { get; set; } = true;
 
+    /// <summary>侧栏分组的展开状态（分组名 → 是否展开）；没记录的分组用默认值。</summary>
+    public Dictionary<string, bool> NavGroupExpanded { get; set; } = new();
+
     public static AppSettings Load(string file)
     {
         AppSettings s = new();
@@ -76,6 +79,7 @@ public sealed class AppSettings
         DuplicateRoots = (DuplicateRoots ?? new()).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         UpdateSource = (UpdateSource ?? "").Trim();
         if (UpdateSource.Length == 0) UpdateSource = Core.Integrity.UpdateSources.Default;
+        NavGroupExpanded ??= new();
         DevProjectRoots = (DevProjectRoots ?? new()).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (RetentionDays is < 1 or > 365) RetentionDays = 30;
         if (DuplicateMinSizeMb is < 0 or > 1_000_000) DuplicateMinSizeMb = 1;

@@ -17,8 +17,35 @@ public sealed partial class NavItem : ObservableObject
     public required string Glyph { get; init; }
     public required object Page { get; init; }
 
+    /// <summary>侧栏分组名；<see cref="NavGroup.Pinned"/> 表示固定在底部、不参与折叠（隔离区、设置）。</summary>
+    public string Group { get; init; } = NavGroup.Pinned;
+
     [ObservableProperty]
     private bool _isSelected;
+}
+
+/// <summary>侧栏分组：标题 + 可折叠的导航项。折叠状态记进设置；当前页所在的组自动展开。</summary>
+public sealed partial class NavGroup : ObservableObject
+{
+    public const string Pinned = "";
+
+    /// <summary>分组顺序与默认折叠状态：清理与空间默认展开，优化与管理默认折叠。</summary>
+    public static readonly IReadOnlyList<(string Title, bool ExpandedByDefault)> Order = new[]
+    {
+        ("清理", true), ("空间", true), ("优化", false), ("管理", false),
+    };
+
+    public required string Title { get; init; }
+    public ObservableCollection<NavItem> Items { get; } = new();
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CollapsedHint))]
+    private bool _isExpanded;
+
+    /// <summary>折叠时在标题右侧显示项数，让用户知道里面有东西。</summary>
+    public string CollapsedHint => IsExpanded ? "" : $"{Items.Count} 项";
+
+    public string AutomationName => $"分组 {Title}";
 }
 
 public sealed partial class ShellViewModel : ObservableObject
@@ -26,7 +53,14 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly AppServices _s;
     private readonly CleanPageViewModel _residuePage;
 
+    /// <summary>全部导航项（含固定项），按加入顺序；"跳转到某页"按标题在这里找。</summary>
     public ObservableCollection<NavItem> Items { get; } = new();
+
+    /// <summary>可折叠的分组（清理 / 空间 / 优化 / 管理），在侧栏滚动区内。</summary>
+    public ObservableCollection<NavGroup> Groups { get; } = new();
+
+    /// <summary>固定在侧栏底部、始终可见的项（隔离区、设置）。</summary>
+    public ObservableCollection<NavItem> PinnedItems { get; } = new();
 
     [ObservableProperty]
     private NavItem? _selected;
@@ -75,13 +109,13 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = s.Elevation.ProbeServiceAsync();
         Add(new NavItem
         {
-            Title = "系统清理", Glyph = "",
+            Group = "清理", Title = "系统清理", Glyph = "",
             Page = new CleanPageViewModel(s, "系统清理", "临时文件、日志、更新缓存、回收站等系统垃圾。默认只勾选“安全”级项目。",
                 () => new[] { RuleScanner.SystemJunk() }),
         });
         Add(new NavItem
         {
-            Title = "应用缓存", Glyph = "",
+            Group = "清理", Title = "应用缓存", Glyph = "",
             Page = new CleanPageViewModel(s, "应用缓存", "浏览器与常用软件的缓存。只清理已安装应用的缓存，配置与用户数据不会被触碰。",
                 () => new[] { RuleScanner.AppCache() }),
         });
@@ -91,12 +125,12 @@ public sealed partial class ShellViewModel : ObservableObject
             "“确认残留”默认勾选，“疑似残留”只展示体积。含登录态、许可证或存档的目录会单独提示。",
             s.CreateResidueScanners, ResidueNote);
         _residuePage.ScanCompleted += (_, _) => s.ResidueOptions.OnlyAppName = null;
-        Add(new NavItem { Title = "残留清理", Glyph = "", Page = _residuePage });
+        Add(new NavItem { Group = "清理", Title = "残留清理", Glyph = "", Page = _residuePage });
 
-        Add(new NavItem { Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor) });
+        Add(new NavItem { Group = "管理", Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor) });
         Add(new NavItem
         {
-            Title = "开发者缓存", Glyph = "",
+            Group = "清理", Title = "开发者缓存", Glyph = "",
             Page = new CleanPageViewModel(s, "开发者缓存",
                 "Gradle、Maven、NuGet、npm、pip、Docker 等工具的缓存目录，只清缓存不清配置；项目中长期未动的 node_modules；conda 环境只列出不默认勾选。" +
                 "在“设置”中添加项目根目录后才会查找 node_modules。",
@@ -104,7 +138,7 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Add(new NavItem
         {
-            Title = "注册表清理", Glyph = "",
+            Group = "清理", Title = "注册表清理", Glyph = "",
             Page = new CleanPageViewModel(s, "注册表清理",
                 "移除已卸载软件遗留的注册表配置，不是提速手段。安全级：无效卸载项、失效快捷方式、MUI 缓存孤儿；建议确认：遗留的软件键、失效文件关联与 App Paths、指向不存在程序的服务与计划任务；" +
                 "高风险：失效 COM 注册与共享 DLL 计数。每一项删除前自动备份，可在“设置 → 备份与还原”中一键还原。",
@@ -112,23 +146,23 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Add(new NavItem
         {
-            Title = "隐私清理", Glyph = "",
+            Group = "清理", Title = "隐私清理", Glyph = "",
             Page = new CleanPageViewModel(s, "隐私清理",
                 "最近使用的文件记录、跳转列表、运行 / 地址栏 / 搜索历史、文件对话框历史、活动历史。文件类走隔离区可恢复，注册表类删除前备份。" +
                 "剪贴板历史请在“设置 → 系统 → 剪贴板”中清除；浏览器历史由各浏览器自行管理。",
                 s.CreatePrivacyScanners),
         });
-        Add(new NavItem { Title = "文件粉碎", Glyph = "", Page = new ShredViewModel(s) });
-        Add(new NavItem { Title = "开机加速", Glyph = "", Page = new StartupViewModel(s) });
-        Add(new NavItem { Title = "磁盘健康", Glyph = "", Page = new DiskViewModel(s) });
-        Add(new NavItem { Title = "内存与进程", Glyph = "", Page = new MemoryViewModel(s) });
-        Add(new NavItem { Title = "系统优化", Glyph = "", Page = new OptimizeViewModel(s) });
-        Add(new NavItem { Title = "驱动与更新", Glyph = "", Page = new DriverViewModel(s) });
-        Add(new NavItem { Title = "弹窗拦截", Glyph = "", Page = new PopupViewModel(s) });
-        Add(new NavItem { Title = "系统修复", Glyph = "", Page = new RepairViewModel(s) });
-        Add(new NavItem { Title = "系统信息", Glyph = "", Page = new SystemInfoViewModel() });
-        Add(new NavItem { Title = "空间分析", Glyph = "", Page = new SpaceAnalyzerViewModel(s) });
-        Add(new NavItem { Title = "重复文件", Glyph = "", Page = new DuplicatesViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "开机加速", Glyph = "", Page = new StartupViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "磁盘健康", Glyph = "", Page = new DiskViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "内存与进程", Glyph = "", Page = new MemoryViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "系统优化", Glyph = "", Page = new OptimizeViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "驱动与更新", Glyph = "", Page = new DriverViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "弹窗拦截", Glyph = "", Page = new PopupViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "系统修复", Glyph = "", Page = new RepairViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "系统信息", Glyph = "", Page = new SystemInfoViewModel() });
+        Add(new NavItem { Group = "空间", Title = "空间分析", Glyph = "", Page = new SpaceAnalyzerViewModel(s) });
+        Add(new NavItem { Group = "空间", Title = "重复文件", Glyph = "", Page = new DuplicatesViewModel(s) });
+        Add(new NavItem { Group = "空间", Title = "文件粉碎", Glyph = "", Page = new ShredViewModel(s) });
         Add(new NavItem { Title = "隔离区", Glyph = "", Page = new QuarantineViewModel(s) });
         Add(new NavItem { Title = "设置", Glyph = "", Page = new SettingsViewModel(s) });
 
@@ -186,12 +220,37 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         item.PropertyChanged += OnNavItemChanged;
         Items.Add(item);
+        if (item.Group == NavGroup.Pinned)
+        {
+            PinnedItems.Add(item);
+            return;
+        }
+        var group = Groups.FirstOrDefault(g => g.Title == item.Group);
+        if (group is null)
+        {
+            var def = NavGroup.Order.FirstOrDefault(o => o.Title == item.Group);
+            var expanded = _s.Settings.NavGroupExpanded.TryGetValue(item.Group, out var saved) ? saved : def.ExpandedByDefault;
+            group = new NavGroup { Title = item.Group, IsExpanded = expanded };
+            group.PropertyChanged += OnNavGroupChanged;
+            Groups.Add(group);
+        }
+        group.Items.Add(item);
+    }
+
+    /// <summary>折叠状态变化即保存；每次只写这一项，不动其他设置。</summary>
+    private void OnNavGroupChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(NavGroup.IsExpanded) || sender is not NavGroup g) return;
+        _s.Settings.NavGroupExpanded[g.Title] = g.IsExpanded;
+        try { _s.Settings.Save(); } catch { }
     }
 
     private void OnNavItemChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName != nameof(NavItem.IsSelected) || sender is not NavItem { IsSelected: true } item) return;
         Selected = item;
+        // 程序内跳转（如"扫描残留"）到了折叠组里的页面：把组展开，让用户看到自己在哪
+        if (Groups.FirstOrDefault(g => g.Items.Contains(item)) is { IsExpanded: false } group) group.IsExpanded = true;
     }
 
     partial void OnSelectedChanged(NavItem? value)

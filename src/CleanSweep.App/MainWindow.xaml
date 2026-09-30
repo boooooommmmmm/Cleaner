@@ -37,18 +37,28 @@
                             Visibility="{Binding Elevation.IsElevated, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
                 </StackPanel>
 
-                <!-- 17 个导航项在小窗口高度下放不下：导航列表自己滚动，顶部标题与底部状态区固定 -->
+                <!-- 固定在底部、始终可见的项：隔离区（后悔药）与设置 -->
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,6">
+                    <Border Height="1" Background="{StaticResource Brush.Border}" Margin="16,4,16,6"/>
+                    <ItemsControl ItemsSource="{Binding PinnedItems}" ItemTemplate="{StaticResource Nav.ItemTemplate}"/>
+                </StackPanel>
+
+                <!-- 分组的导航列表：组标题可折叠，列表自己滚动，顶部标题与底部区域固定 -->
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
-                    <ItemsControl ItemsSource="{Binding Items}">
+                    <ItemsControl ItemsSource="{Binding Groups}">
                         <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="{x:Type vm:NavItem}">
-                                <RadioButton Style="{StaticResource Nav.Item}" GroupName="Nav" IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                             AutomationProperties.Name="{Binding Title}">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                                        <TextBlock Text="{Binding Title}" FontSize="14" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </RadioButton>
+                            <DataTemplate DataType="{x:Type vm:NavGroup}">
+                                <StackPanel>
+                                    <ToggleButton Style="{StaticResource Nav.GroupHeader}" IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                                                  AutomationProperties.Name="{Binding AutomationName}">
+                                        <DockPanel>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding CollapsedHint}" Style="{StaticResource Text.Secondary}" FontSize="11" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Title}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Brush.TextSecondary}" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                    </ToggleButton>
+                                    <ItemsControl ItemsSource="{Binding Items}" ItemTemplate="{StaticResource Nav.ItemTemplate}"
+                                                  Visibility="{Binding IsExpanded, Converter={StaticResource BoolToVis}}"/>
+                                </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
