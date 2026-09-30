@@ -58,8 +58,9 @@ try {
     if ($fetchExit -ne 0) { throw "git fetch origin $Branch 失败（退出码 $fetchExit）" }
     $remote = (git rev-parse "origin/$Branch").Trim()
     if ($sha -ne $remote) { throw "HEAD（$sha）与 origin/$Branch（$remote）不一致：先把代码推送到 GitHub 再发布" }
-    $dirty = git status --porcelain | Where-Object { $_ -notmatch 'release/latest\.json$' }
-    if ($dirty) { throw "工作树有未提交的改动，先提交并推送：`n$($dirty -join "`n")" }
+    # 只看已跟踪文件：未跟踪文件不进构建产物，不应阻止发布
+    $dirty = git status --porcelain --untracked-files=no | Where-Object { $_ -notmatch 'release/latest\.json$' }
+    if ($dirty) { throw "已跟踪文件有未提交的改动，先提交并推送：`n$($dirty -join "`n")" }
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $headers = @{
