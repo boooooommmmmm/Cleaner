@@ -49,7 +49,13 @@ try {
 
     # 发布信息里的下载地址指向 tag v<版本>，tag 必须打在已经推送的提交上，否则用户看得到新版本却下载不到
     $sha = (git rev-parse HEAD).Trim()
-    git fetch origin $Branch 2>&1 | Out-Null
+    # git 把进度信息写到 stderr，$ErrorActionPreference = Stop 下会被当成错误终止，临时放宽并只看退出码
+    $prevEap = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    git fetch --quiet origin $Branch 2>$null
+    $fetchExit = $LASTEXITCODE
+    $ErrorActionPreference = $prevEap
+    if ($fetchExit -ne 0) { throw "git fetch origin $Branch 失败（退出码 $fetchExit）" }
     $remote = (git rev-parse "origin/$Branch").Trim()
     if ($sha -ne $remote) { throw "HEAD（$sha）与 origin/$Branch（$remote）不一致：先把代码推送到 GitHub 再发布" }
     $dirty = git status --porcelain | Where-Object { $_ -notmatch 'release/latest\.json$' }
