@@ -37,19 +37,22 @@
                             Visibility="{Binding Elevation.IsElevated, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
                 </StackPanel>
 
-                <ItemsControl ItemsSource="{Binding Items}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:NavItem}">
-                            <RadioButton Style="{StaticResource Nav.Item}" GroupName="Nav" IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                         AutomationProperties.Name="{Binding Title}">
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding Title}" FontSize="14" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </RadioButton>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                <!-- 17 个导航项在小窗口高度下放不下：导航列表自己滚动，顶部标题与底部状态区固定 -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+                    <ItemsControl ItemsSource="{Binding Items}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:NavItem}">
+                                <RadioButton Style="{StaticResource Nav.Item}" GroupName="Nav" IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                             AutomationProperties.Name="{Binding Title}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Glyph}" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Title}" FontSize="14" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </RadioButton>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
             </DockPanel>
         </Border>
 
