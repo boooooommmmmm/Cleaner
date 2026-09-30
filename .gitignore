@@ -23,6 +23,8 @@ mono_crash.*
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
+# 程序自更新读取的发布信息 release/latest.json 必须入库（上面的模板规则会忽略 release 目录）
+!/release/
 [Rr]eleases/
 x64/
 x86/
