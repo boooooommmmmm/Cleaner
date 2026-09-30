@@ -201,7 +201,7 @@
                     <TextBlock Text="{Binding RulesSummary}" Margin="0,8,0,0"/>
                     <TextBlock Text="{Binding DataSetSummary}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0" TextWrapping="Wrap"/>
                     <TextBlock Text="在线更新" FontWeight="SemiBold" Margin="0,12,0,0"/>
-                    <TextBlock Text="更新来源填 GitHub 仓库（owner/repo，可加 @分支）或 https 根地址。规则库、指纹库、弹窗规则与程序本身都从这里更新：清单与发布信息必须由受信任密钥签名、版本高于当前、每个文件哈希一致，否则不更换。" Style="{StaticResource Text.Secondary}" Margin="0,4,0,6" TextWrapping="Wrap"/>
+                    <TextBlock Text="更新来源默认是官方仓库 boooooommmmmm/Cleaner（清空即恢复默认），也可填其他 GitHub 仓库（owner/repo，可加 @分支）或 https 根地址；GitHub 直连失败时会自动改用镜像再试一次。规则库、指纹库、弹窗规则与程序本身都从这里更新：清单与发布信息必须由受信任密钥签名、版本高于当前、每个文件哈希一致，否则不更换。" Style="{StaticResource Text.Secondary}" Margin="0,4,0,6" TextWrapping="Wrap"/>
                     <DockPanel>
                         <Button DockPanel.Dock="Right" Content="检查规则更新" Command="{Binding CheckDataUpdatesCommand}" Margin="8,0,0,0"/>
                         <TextBox Text="{Binding UpdateSource, UpdateSourceTrigger=LostFocus}" Height="30" VerticalContentAlignment="Center" Padding="6,0"

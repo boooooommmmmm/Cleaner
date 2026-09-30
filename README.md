@@ -22,7 +22,7 @@
 | 已安装软件清单（注册表、应用商店、便携软件、运行进程）与应用指纹库（69 条） | 可用 |
 | 用户目录残留清理（按应用聚合；确认 / 疑似 / 未知三级；多用户与已删除账户；卸载记录定向扫描） | 可用 |
 | 开发者缓存（Gradle / Maven / NuGet / npm / pip / Docker 等只清缓存；闲置 node_modules；conda 环境） | 可用 |
-| 软件卸载（官方卸载程序、MSI、应用商店包；预装软件识别；安装监控快照比对） | 可用 |
+| 软件卸载（官方卸载程序、MSI、应用商店包；卸载程序已不存在时可备份后移除登记项；预装软件识别；安装监控快照比对） | 可用 |
 | 卸载后即时残留提醒（程序运行期间监听卸载事件） | 可用，默认关闭 |
 | 普通权限运行 + 提权服务（命名管道、枚举型指令、SID 与程序校验；条目按权限标记，系统目录的“安全”级条目交给服务按条目 ID 执行，其余可“以管理员身份重新启动”） | 可用 |
 | 注册表清理（无效卸载项、失效快捷方式、MUI 缓存、遗留软件键、失效关联 / App Paths、指向不存在程序的服务与任务、失效 COM、共享 DLL；注册表护栏 + 删除前备份 + 扫描后变化拒绝；计划任务备份可恢复） | 可用 |
@@ -36,7 +36,7 @@
 | 系统修复（sfc、DISM、wsreset、重启资源管理器、默认应用、hosts 编辑与备份） | 可用 |
 | 系统信息面板 | 可用 |
 | 规则库（74 条）/ 指纹库 / 弹窗规则签名校验与在线更新（ECDSA P-256 签名清单，只加载清单内哈希一致的文件；https 更新渠道，版本只升不降） | 可用（正式密钥 release-2026-09） |
-| 程序自更新（GitHub Release；安装目录里的程序复验签名后事务式替换，失败自动还原） | 可用，真实下载安装待虚拟机验证 |
+| 程序自更新（GitHub Release；安装目录里的程序复验签名后事务式替换，失败自动还原；默认来源官方仓库，GitHub 直连失败自动改用镜像） | 可用，0.15.0 → 0.16.0 已在本机真实跑通；管理员 / 提权服务场景待虚拟机验证 |
 | 文件恢复、软件搬家、桌面整理 | 不做（原因见设计文档 v0.12 变更记录） |
 
 ## 环境要求
@@ -75,7 +75,7 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ## 自动更新（GitHub 仓库作为更新来源）
 
-设置页"更新来源"填 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西：
+设置页"更新来源"默认是官方仓库 `boooooommmmmm/Cleaner`（v0.16.1 起；此前默认为空，装好后从不检查更新），可改成其他 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西。GitHub 仓库形式在 raw.githubusercontent.com 连不上时会自动改用 jsDelivr 镜像再试一次（镜像只是搬运，签名与哈希校验不变）。启动时后台检查只提示不自动安装，安装要到设置页点"下载并安装"。0.15.0 → 0.16.0 的完整流程（下载、校验、安装目录里的程序复验并替换、以新版本重启）已在本机真实跑通。
 
 - **规则库 / 指纹库 / 弹窗规则**：`<来源>/rules|fingerprints|popups/manifest.json`。签名可信、版本高于当前、逐文件哈希一致后整体切换到数据目录的 `updates\<kind>`。直接把签好名的目录提交到仓库即可，GitHub 的 raw 地址就是更新源。
 - **程序本身**：`<来源>/release/latest.json`（版本、压缩包名、下载地址、SHA-256、大小、签名，用数据签名密钥签发）。版本更高时用户可在设置页"下载并安装"，分三步：① 界面下载压缩包（流式核对大小与哈希）并把签名的发布信息存在旁边，然后关闭自己；② **安装目录里已有的** CleanSweep.exe（可信位置；安装目录不可写或装有提权服务时弹 UAC）以独占方式打开压缩包，重新校验发布信息签名、版本只升、大小与哈希、条目路径和其中数据集的签名，解压到安装目录下的 `.update-stage`；③ 那里的新程序等旧进程退出、停提权服务，把旧文件改名到 `.update-backup` 再复制新文件，任何失败全部还原并恢复服务；成功后启动新版本并清理。替换只涉及安装清单 `install-files.txt` 里的文件，不跟随安装目录内的 Junction / 符号链接。勾选"启动时在后台检查更新"只提示不自动安装。
@@ -84,8 +84,8 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.16.0"; git push
-# 在 GitHub 创建 tag v0.16.0 的 Release，上传 publish/CleanSweep-win-x64-0.16.0.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.16.1"; git push
+# 在 GitHub 创建 tag v0.16.1 的 Release，上传 publish/CleanSweep-win-x64-0.16.1.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。

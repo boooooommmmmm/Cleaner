@@ -61,11 +61,14 @@
                                                     Command="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                             <Button Content="静默卸载" Style="{StaticResource Button.Link}" Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.UninstallQuietCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button Content="移除卸载项" Style="{StaticResource Button.Link}" Visibility="{Binding CanRemoveEntry, Converter={StaticResource BoolToVis}}"
+                                                    ToolTip="卸载程序已不存在：备份后删除这条登记项，不运行任何程序、不动程序目录"
+                                                    Command="{Binding DataContext.RemoveEntryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                             <Button Content="扫描残留" Style="{StaticResource Button.Link}"
                                                     Command="{Binding DataContext.ScanResidueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
                                             <Button Content="打开位置" Style="{StaticResource Button.Link}" Visibility="{Binding CanOpenLocation, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.OpenLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
-                                            <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" ToolTip="{Binding Note}" MaxWidth="120"
+                                            <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" ToolTip="{Binding Note}" MaxWidth="170" TextWrapping="Wrap"
                                                        Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
                                         </StackPanel>
                                     </DataTemplate>

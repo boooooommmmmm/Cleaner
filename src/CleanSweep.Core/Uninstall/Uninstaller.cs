@@ -100,6 +100,46 @@ public sealed partial class Uninstaller
         return new UninstallCommand(exe, args2 ?? "", "exe");
     }
 
+    /// <summary>
+    /// 注册表卸载项的卸载程序已不存在（非 MSI、非应用商店、命令里的可执行文件路径是绝对路径但文件没了）：
+    /// 这条登记项在"应用和功能"里既卸不掉也修不了，唯一的出路是移除登记项本身。
+    /// </summary>
+    public static bool UninstallerMissing(InstalledApp app, out string? exe)
+    {
+        exe = null;
+        if (app.Source != AppSource.Registry || string.IsNullOrWhiteSpace(app.RegistryKey)) return false;
+        var raw = app.UninstallString;
+        if (string.IsNullOrWhiteSpace(raw) || raw.Contains("msiexec", StringComparison.OrdinalIgnoreCase)) return false;
+        raw = System.Environment.ExpandEnvironmentVariables(raw.Trim());
+        var (candidate, _) = CommandLine.Split(raw);
+        if (candidate is null || !Path.IsPathRooted(candidate) || File.Exists(candidate)) return false;
+        exe = candidate;
+        return true;
+    }
+
+    /// <summary>
+    /// 移除卸载程序已不存在的登记项：只删这一条 Uninstall 键（RegistryOps 先导出 .reg 备份，可在设置页还原），
+    /// 不运行任何程序、不动安装目录（Program Files 全树保护），并写入卸载历史让残留清理定向扫描。返回备份文件名。
+    /// </summary>
+    public string RemoveEntry(InstalledApp app, RegistryCleaning.RegistryOps ops)
+    {
+        if (!UninstallerMissing(app, out var exe)) throw new InvalidOperationException("只有卸载程序已不存在的登记项才能移除");
+
+        // 清单可能是几分钟前读的：重新读键里的 UninstallString，与清单不一致（软件被重装 / 修复）就拒绝
+        using (var k = Backup.RegistryPath.Open(app.RegistryKey!, app.View, writable: false) ?? throw new InvalidOperationException("登记项已不存在，请刷新"))
+        {
+            var now = (k.GetValue("UninstallString", null, Microsoft.Win32.RegistryValueOptions.DoNotExpandEnvironmentNames) as string)?.Trim();
+            if (!string.Equals(now, app.UninstallString?.Trim(), StringComparison.Ordinal))
+                throw new InvalidOperationException("登记项在读取后已变化（软件可能已重新安装或修复），请刷新后再试");
+        }
+        // 删除前快照 + 重探卸载程序仍不存在（RegistryOps 的统一核对）
+        var snapshot = RegistryCleaning.RegistrySnapshot.OfKey(app.RegistryKey!, app.View);
+        var backup = ops.DeleteKey(new Model.RegistryTarget(app.RegistryKey!, app.View, null), $"移除卸载项：{app.Name}（卸载程序 {exe} 已不存在）", snapshot, exe);
+        _history.Record(app, "entry-removed");
+        _log.Write(null, ModuleId, "remove-entry", app.RegistryKey, 0, true, $"卸载程序 {exe} 已不存在；备份：{backup}");
+        return backup;
+    }
+
     /// <summary>运行官方卸载程序并等待结束。取消只停止等待，不终止卸载程序（中途强杀会留下半卸载状态）。</summary>
     public async Task<UninstallResult> RunAsync(InstalledApp app, bool quiet, CancellationToken ct)
     {

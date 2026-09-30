@@ -9,20 +9,29 @@ using CleanSweep.Core.Safety;
 namespace CleanSweep.Core.Integrity;
 
 /// <summary>更新来源：一个 GitHub 仓库（owner/name[@branch]）或任意 https 根地址。规则库与程序发布信息都从这里取。</summary>
-public sealed record UpdateSources(string DataBaseUrl, string ReleaseInfoUrl, string Display)
+/// <summary>
+/// 更新来源解析结果。GitHub 仓库形式带一个备用根（jsDelivr 的 GitHub 镜像）：raw.githubusercontent.com 在部分网络里连不上，
+/// 主地址网络失败时用备用地址再试一次。镜像只是搬运，签名清单与发布信息的校验不变，所以不降低信任要求。
+/// </summary>
+public sealed record UpdateSources(string DataBaseUrl, string ReleaseInfoUrl, string Display, string? FallbackDataBaseUrl = null, string? FallbackReleaseInfoUrl = null)
 {
+    /// <summary>官方仓库：设置为空时用它，用户可改成自己的仓库或 https 根地址。</summary>
+    public const string Default = "boooooommmmmm/Cleaner";
+
+    public const string ReleaseInfoPath = "/release/latest.json";
+
     /// <summary>
-    /// "owner/repo" 或 "owner/repo@branch" → raw.githubusercontent.com；以 http(s):// 开头 → 直接当根地址。
-    /// 返回 null 表示未设置或格式无效。
+    /// "owner/repo" 或 "owner/repo@branch" → raw.githubusercontent.com（备用 cdn.jsdelivr.net/gh）；以 http(s):// 开头 → 直接当根地址，无备用。
+    /// 返回 null 表示格式无效；空字符串按 <see cref="Default"/> 处理。
     /// </summary>
     public static UpdateSources? Resolve(string? setting)
     {
         var s = (setting ?? "").Trim().TrimEnd('/');
-        if (s.Length == 0) return null;
+        if (s.Length == 0) s = Default;
         if (s.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || s.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
         {
             if (DataUpdater.ValidateBaseUrl(s) is not null) return null;
-            return new UpdateSources(s, s + "/release/latest.json", s);
+            return new UpdateSources(s, s + ReleaseInfoPath, s);
         }
         var branch = "main";
         var at = s.IndexOf('@');
@@ -31,8 +40,16 @@ public sealed record UpdateSources(string DataBaseUrl, string ReleaseInfoUrl, st
         if (parts.Length != 2 || parts.Any(p => p.Length == 0 || p.Any(c => !(char.IsLetterOrDigit(c) || c is '-' or '_' or '.')))) return null;
         if (branch.Length == 0 || branch.Any(c => !(char.IsLetterOrDigit(c) || c is '-' or '_' or '.' or '/'))) return null;
         var root = $"https://raw.githubusercontent.com/{parts[0]}/{parts[1]}/{branch}";
-        return new UpdateSources(root, root + "/release/latest.json", $"github.com/{parts[0]}/{parts[1]}@{branch}");
+        var mirror = $"https://cdn.jsdelivr.net/gh/{parts[0]}/{parts[1]}@{branch}";
+        return new UpdateSources(root, root + ReleaseInfoPath, $"github.com/{parts[0]}/{parts[1]}@{branch}", mirror, mirror + ReleaseInfoPath);
     }
+
+    /// <summary>检查 / 下载清单阶段的失败是否属于"连不上主地址"这一类（值得换备用地址再试），而不是内容无效。</summary>
+    public static bool IsNetworkFailure(string message) =>
+        message.StartsWith("获取发布信息失败", StringComparison.Ordinal)
+        || message.StartsWith("获取发布信息超时", StringComparison.Ordinal)
+        || message.StartsWith("下载清单失败", StringComparison.Ordinal)
+        || message.StartsWith("更新超时", StringComparison.Ordinal);
 }
 
 public sealed record AppUpdateCheck(bool Available, ReleaseInfo? Release, string Message);

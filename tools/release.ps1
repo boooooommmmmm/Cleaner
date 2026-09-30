@@ -1,5 +1,5 @@
 ﻿# 打一个可自动更新的发布：publish → zip → 用数据签名密钥生成 release/latest.json。
-# 用法：powershell -File tools/release.ps1 -Repo owner/CleanSweep [-Version 0.16.0] [-Notes "..."] [-Key <私钥.pem>] [-KeyId release-2026-09]
+# 用法：powershell -File tools/release.ps1 -Repo owner/CleanSweep [-Version 0.16.1] [-Notes "..."] [-Key <私钥.pem>] [-KeyId release-2026-09]
 # 私钥默认读 %USERPROFILE%\.cleansweep\keys\release-signing-key.pem，不在仓库里。
 # 之后：
 #   1. git add release/latest.json && git commit && git push          （程序从 raw.githubusercontent.com/<repo>/main/release/latest.json 读发布信息）

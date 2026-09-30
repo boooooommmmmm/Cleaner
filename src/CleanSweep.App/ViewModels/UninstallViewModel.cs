@@ -6,6 +6,7 @@ using System.Windows.Data;
 using CleanSweep.App.Helpers;
 using CleanSweep.App.Services;
 using CleanSweep.Core.Inventory;
+using CleanSweep.Core.Safety;
 using CleanSweep.Core.Uninstall;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -19,8 +20,12 @@ public sealed class UninstallRow
         App = app;
         IsBloatware = Bloatware.IsKnown(app);
         CanUninstall = Uninstaller.BuildCommand(app, quiet: false, out var error) is not null;
-        Note = error;
+        CanRemoveEntry = !CanUninstall && Uninstaller.UninstallerMissing(app, out _);
+        Note = CanRemoveEntry ? "卸载程序已不存在，只能移除登记项" : error;
     }
+
+    /// <summary>卸载程序已不存在：不能卸载，但可以把"应用和功能"里这条登记项移除（备份后删键）。</summary>
+    public bool CanRemoveEntry { get; }
 
     public InstalledApp App { get; }
     public string Name => App.Name;
@@ -124,6 +129,35 @@ public sealed partial class UninstallViewModel : ObservableObject
         catch (Exception ex)
         {
             Status = $"读取失败：{ex.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>卸载程序已不存在时的出路：移除登记项（备份后删 Uninstall 键），不运行任何程序、不动安装目录。</summary>
+    [RelayCommand(CanExecute = nameof(NotBusy))]
+    private async Task RemoveEntryAsync(UninstallRow? row)
+    {
+        if (row is null || !Uninstaller.UninstallerMissing(row.App, out var exe)) return;
+        var needsAdmin = row.App.RegistryKey!.StartsWith("HKLM", StringComparison.OrdinalIgnoreCase) && !_s.Elevation.IsElevated;
+        var msg = $"移除“{row.Name}”的卸载登记项？\n\n它的卸载程序已不存在：\n{exe}\n\n这不会运行任何卸载逻辑，也不会删除程序目录，只是把“应用和功能”里这一条登记项删掉：\n{row.App.RegistryKey}\n\n删除前会导出 .reg 备份，可在“设置 → 备份与还原”中还原。之后可到“残留清理”处理它遗留的文件。" +
+                  (needsAdmin ? "\n\n这个登记项在 HKLM 下，普通权限无法删除，请先点左下角“以管理员身份重新启动”。" : "");
+        if (MessageBox.Show(msg, "移除卸载项", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+
+        IsBusy = true;
+        try
+        {
+            var backup = await Task.Run(() => _s.Uninstaller.RemoveEntry(row.App, _s.RegistryOps));
+            Status = $"已移除“{row.Name}”的卸载登记项（备份 {backup}）。";
+            await RefreshAsync();
+            if (MessageBox.Show($"“{row.Name}”的登记项已移除。现在扫描它遗留在用户目录中的数据？", "扫描残留", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                _scanResidueFor(row.Name);
+        }
+        catch (Exception ex)
+        {
+            Status = $"移除失败：{ex.Message}" + (AccessDenied.Is(ex) && !_s.Elevation.IsElevated ? " 该登记项需要管理员权限，请点左下角“以管理员身份重新启动”后再试。" : "");
         }
         finally
         {

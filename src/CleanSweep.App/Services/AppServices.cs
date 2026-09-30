@@ -203,6 +203,13 @@ public sealed class AppServices
         {
             var current = loc.Verdict.Ok ? loc.Verdict.Version : 0;
             var r = await updater.UpdateAsync(loc.Kind, source.DataBaseUrl, current, AppPaths.UpdateDir(loc.Kind), ct).ConfigureAwait(false);
+            // 主地址连不上（不是内容无效）时用镜像再试一次；镜像内容同样要过签名与哈希
+            if (source.FallbackDataBaseUrl is { } mirror && UpdateSources.IsNetworkFailure(r.Message))
+            {
+                Log.Write(null, loc.KindName, "update", source.Display, 0, false, r.Message + "；改用备用地址");
+                var m = await updater.UpdateAsync(loc.Kind, mirror, current, AppPaths.UpdateDir(loc.Kind), ct).ConfigureAwait(false);
+                r = m with { Message = UpdateSources.IsNetworkFailure(m.Message) ? $"{r.Message}；备用地址：{m.Message}" : m.Message };
+            }
             Log.Write(null, loc.KindName, "update", source.Display, 0, r.Updated || r.RemoteVersion is not null, r.Message);
             results.Add(r);
         }
@@ -215,7 +222,14 @@ public sealed class AppServices
     {
         var source = UpdateSources;
         if (source is null) return new AppUpdateCheck(false, null, "未设置更新来源");
-        var r = await new AppUpdater().CheckAsync(source.ReleaseInfoUrl, CurrentVersion, ct).ConfigureAwait(false);
+        var updater = new AppUpdater();
+        var r = await updater.CheckAsync(source.ReleaseInfoUrl, CurrentVersion, ct).ConfigureAwait(false);
+        if (source.FallbackReleaseInfoUrl is { } mirror && UpdateSources.IsNetworkFailure(r.Message))
+        {
+            Log.Write(null, "app", "check-update", source.Display, 0, false, r.Message + "；改用备用地址");
+            var m = await updater.CheckAsync(mirror, CurrentVersion, ct).ConfigureAwait(false);
+            r = UpdateSources.IsNetworkFailure(m.Message) ? m with { Message = $"{r.Message}；备用地址：{m.Message}" } : m;
+        }
         Log.Write(null, "app", "check-update", source.Display, 0, r.Release is not null, r.Message);
         return r;
     }

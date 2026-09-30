@@ -44,8 +44,11 @@ public sealed class AppSettings
     /// <summary>弹窗拦截：程序运行期间按规则关闭弹窗。</summary>
     public bool PopupBlockerEnabled { get; set; }
 
-    /// <summary>更新来源：GitHub 仓库 "owner/repo[@branch]" 或 https 根地址。规则库、指纹库、弹窗规则与程序发布信息都从这里取；空表示不检查更新。</summary>
-    public string UpdateSource { get; set; } = "";
+    /// <summary>
+    /// 更新来源：GitHub 仓库 "owner/repo[@branch]" 或 https 根地址。规则库、指纹库、弹窗规则与程序发布信息都从这里取。
+    /// 默认是官方仓库（此前默认空，导致装好后从不检查更新）；清空时恢复默认，不想检查更新请关掉"启动时在后台检查更新"。
+    /// </summary>
+    public string UpdateSource { get; set; } = Core.Integrity.UpdateSources.Default;
 
     /// <summary>启动时在后台检查程序与数据集更新（只提示，不自动安装）。</summary>
     public bool CheckUpdatesOnStartup { get; set; } = true;
@@ -72,6 +75,7 @@ public sealed class AppSettings
     {
         DuplicateRoots = (DuplicateRoots ?? new()).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         UpdateSource = (UpdateSource ?? "").Trim();
+        if (UpdateSource.Length == 0) UpdateSource = Core.Integrity.UpdateSources.Default;
         DevProjectRoots = (DevProjectRoots ?? new()).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (RetentionDays is < 1 or > 365) RetentionDays = 30;
         if (DuplicateMinSizeMb is < 0 or > 1_000_000) DuplicateMinSizeMb = 1;
