@@ -44,7 +44,16 @@ public sealed class CleanReport
 
     /// <summary>删除的注册表值 / 键、服务、计划任务数（不经隔离区，靠备份撤销）。</summary>
     public int RegistryEntriesRemoved { get; set; }
+
+    /// <summary>因扫描后变化、白名单、已不存在等原因跳过的文件 / 目录数（不含正在使用的，见 <see cref="InUse"/>）。</summary>
     public int Skipped { get; set; }
+
+    /// <summary>正在被其他程序使用而这次没动的文件 / 目录数。不算失败：关掉占用的程序后重新扫描即可。</summary>
+    public int InUse { get; set; }
+
+    /// <summary>正在使用的文件明细（路径与占用说明），界面按需展示。</summary>
+    public List<CleanFailure> InUseFiles { get; } = new();
+
     public List<CleanFailure> Failures { get; } = new();
     public TimeSpan Elapsed { get; set; }
 
@@ -311,6 +320,10 @@ public sealed class CleanEngine
                     _log.Write(batchId, item.ModuleId, "quarantine", f.Path, f.Size, true);
                     if (Path.GetDirectoryName(f.Path) is { } parent) touchedDirs.Add(parent);
                 }
+                catch (Exception ex) when (FileInUse.Is(ex))
+                {
+                    InUseSkip(report, batchId, item, f.Path);
+                }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
                     Fail(report, batchId, item, f.Path, ex.Message);
@@ -438,6 +451,10 @@ public sealed class CleanEngine
             report.Outcome(item).Succeeded++;
             _log.Write(batchId, item.ModuleId, "quarantine-dir", item.Path, item.SizeBytes, true);
         }
+        catch (Exception ex) when (FileInUse.Is(ex))
+        {
+            InUseSkip(report, batchId, item, item.Path);
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             Fail(report, batchId, item, item.Path, ex.Message);
@@ -530,9 +547,33 @@ public sealed class CleanEngine
 
     private void Fail(CleanReport report, string batchId, ScanItem item, string? path, string reason)
     {
+        reason = StripPathSuffix(reason, path);
         report.Failures.Add(new CleanFailure(item.Id, item.DisplayName, path, reason));
         report.Outcome(item).Failed++;
         _log.Write(batchId, item.ModuleId, "fail", path, 0, false, reason);
+    }
+
+    /// <summary>正在使用的文件按跳过计数，条目保留在列表里；不进 Failures，界面不为它弹失败对话框。</summary>
+    private void InUseSkip(CleanReport report, string batchId, ScanItem item, string? path)
+    {
+        const string reason = "正在被其他程序使用，这次跳过";
+        report.InUse++;
+        report.InUseFiles.Add(new CleanFailure(item.Id, item.DisplayName, path, reason));
+        report.Outcome(item).Skipped++;
+        _log.Write(batchId, item.ModuleId, "skip", path, 0, true, reason);
+    }
+
+    /// <summary>底层异常消息常自带"（路径）"后缀（HandleMove、.NET IO），失败明细已单独列路径，去掉重复的一份。</summary>
+    internal static string StripPathSuffix(string reason, string? path)
+    {
+        if (string.IsNullOrEmpty(path)) return reason;
+        var trimmed = reason.TrimEnd();
+        foreach (var suffix in new[] { $"（{path}）", $"({path})", $"'{path}'", $"\"{path}\"" })
+        {
+            if (trimmed.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+                return trimmed[..^suffix.Length].TrimEnd(' ', '：', ':', '。', '.');
+        }
+        return reason;
     }
 
     private void Skip(CleanReport report, string batchId, ScanItem item, string? path, string reason)

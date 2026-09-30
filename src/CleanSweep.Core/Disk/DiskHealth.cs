@@ -262,11 +262,44 @@ public static class DiskHealth
         }
     }
 
+    /// <summary>defrag 的所有操作与 chkntfs /C 都需要管理员身份；普通权限下 defrag 什么都不做，只打印错误且退出码仍为 0。</summary>
+    public static bool RequiresElevation(DiskOperation op) => op != DiskOperation.QueryCheckDisk;
+
     public static async Task<CommandResult> RunAsync(DiskOperation op, string letter, MediaKind media, CancellationToken ct, IProgress<string>? output = null)
     {
         var cmd = BuildCommand(op, letter, media, out var error);
         if (cmd is null) return new CommandResult(-1, error!, TimeSpan.Zero, false);
         var timeout = op is DiskOperation.Analyze or DiskOperation.QueryCheckDisk or DiskOperation.ScheduleCheckDisk ? TimeSpan.FromMinutes(10) : TimeSpan.FromHours(6);
-        return await SystemCommand.RunAsync(cmd.Value.Exe, cmd.Value.Args, timeout, ct, output).ConfigureAwait(false);
+        var result = await SystemCommand.RunAsync(cmd.Value.Exe, cmd.Value.Args, timeout, ct, output).ConfigureAwait(false);
+        return Normalize(result);
     }
+
+    /// <summary>
+    /// defrag.exe 出错时（权限不足 0x89000024、卷无效 0x89000001、正在被别的优化任务使用 0x89000018 等）退出码仍是 0，
+    /// 只在输出里印一个 (0x89xxxxxx) 错误码。按退出码判定会把"什么都没做"报成"完成"，这里把错误码提升为失败退出码。
+    /// </summary>
+    public static CommandResult Normalize(CommandResult result)
+    {
+        if (!result.Success) return result;
+        var code = ParseDefragError(result.Output);
+        return code is null ? result : result with { ExitCode = code.Value };
+    }
+
+    private static readonly Regex DefragErrorPattern = new(@"\(0x(89[0-9A-Fa-f]{6})\)", RegexOptions.Compiled);
+
+    /// <summary>从 defrag 输出里取错误码（0x89 开头的存储优化器错误）；没有则为 null。</summary>
+    public static int? ParseDefragError(string? output)
+    {
+        if (string.IsNullOrEmpty(output)) return null;
+        var m = DefragErrorPattern.Match(output);
+        return m.Success ? unchecked((int)Convert.ToUInt32(m.Groups[1].Value, 16)) : null;
+    }
+
+    /// <summary>把退出码翻译成用户能看懂的原因；未知码返回 null。</summary>
+    public static string? DescribeExitCode(int exitCode) => unchecked((uint)exitCode) switch
+    {
+        0x89000024 => "权限不足：需要以管理员身份运行",
+        0x89000001 => "卷路径无效",
+        _ => null,
+    };
 }

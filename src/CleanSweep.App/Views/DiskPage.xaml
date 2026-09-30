@@ -13,6 +13,8 @@
                     <TextBlock Text="磁盘健康" Style="{StaticResource Text.Title}"/>
                     <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
                                Text="介质识别、S.M.A.R.T. 健康、系统优化计划状态。手动优化调用系统的 defrag.exe；固态盘绝不做碎片整理。"/>
+                    <TextBlock Text="{Binding ElevationHint}" Foreground="{StaticResource Brush.Risk.Confirm}" TextWrapping="Wrap" Margin="0,6,0,0" MaxWidth="900"
+                               Visibility="{Binding ElevationHint, Converter={StaticResource NullToVis}}"/>
                 </StackPanel>
                 <Button Content="刷新" Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" MinWidth="90"/>
             </Grid>

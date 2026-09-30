@@ -59,6 +59,9 @@ public sealed class RuleTargetDto
 
     /// <summary>仅清理最后修改早于 N 天的文件（0 表示不限制）。</summary>
     public int MinAgeDays { get; set; }
+
+    /// <summary>按文件名排除的通配模式（如 "TileCache_*"），用于目录里长期被进程独占、清了也只会报"正在使用"的文件。只对 files 目标有效。</summary>
+    public List<string>? Exclude { get; set; }
 }
 
 /// <summary>JSON 反序列化用的规则 DTO。</summary>
@@ -94,7 +97,8 @@ public sealed record RuleTarget(
     IReadOnlyList<string> PreActions,
     string? Command,
     string? Args,
-    int MinAgeDays)
+    int MinAgeDays,
+    IReadOnlyList<string> Exclude)
 {
     /// <summary>路径含通配目录段：ExpandedPath 是展开后的模板（仍含 *），扫描时逐个解析成具体目录。</summary>
     public bool HasWildcard => RawPath is not null && Safety.PathGuard.HasWildcardSegment(RawPath);

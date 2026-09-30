@@ -142,7 +142,7 @@
       "publisher": null,
       "category": "system",
       "targets": [
-        { "path": "%LocalAppData%\\NVIDIA\\DXCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA DirectX 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\NVIDIA\\DXCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA DirectX 着色器缓存，自动重建；正在运行的程序占用的条目会跳过" },
         { "path": "%LocalAppData%\\NVIDIA\\GLCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA OpenGL 着色器缓存，自动重建" },
         { "path": "%LocalAppData%\\AMD\\DxCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "AMD DirectX 着色器缓存，自动重建" },
         { "path": "%LocalAppData%\\AMD\\GLCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "AMD OpenGL 着色器缓存，自动重建" },
@@ -157,7 +157,7 @@
       "publisher": "Microsoft",
       "category": "system",
       "targets": [
-        { "path": "%LocalAppData%\\Packages\\*\\TempState", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的临时文件目录", "minAgeDays": 1},
+        { "path": "%LocalAppData%\\Packages\\*\\TempState", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的临时文件目录", "minAgeDays": 1, "exclude": ["TileCache_*"] },
         { "path": "%LocalAppData%\\Packages\\*\\AC\\INetCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的网页缓存", "minAgeDays": 1},
         { "path": "%LocalAppData%\\Packages\\*\\AC\\Temp", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的临时文件", "minAgeDays": 1}
       ]

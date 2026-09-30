@@ -230,6 +230,17 @@ public sealed class RuleLoader
 
                     if (kind == TargetKind.Directory && t.Pattern is not null)
                         return (null, "directory 目标不支持 pattern");
+
+                    if (t.Exclude is not null)
+                    {
+                        if (kind != TargetKind.Files) return (null, "exclude 只对 files 目标有效");
+                        foreach (var ex in t.Exclude)
+                        {
+                            if (string.IsNullOrWhiteSpace(ex)) return (null, "exclude 含空模式");
+                            if (ex.IndexOfAny(new[] { '\\', '/', ':' }) >= 0) return (null, $"exclude 不得包含路径分隔符：{ex}");
+                            if (ex.Trim() == "*") return (null, "exclude 不得为 *（等于整条目标无效）");
+                        }
+                    }
                     break;
                 }
                 case TargetKind.Command:
@@ -261,7 +272,8 @@ public sealed class RuleLoader
                 PreActions: t.PreActions?.AsReadOnly() ?? (IReadOnlyList<string>)Array.Empty<string>(),
                 Command: t.Command,
                 Args: t.Args,
-                MinAgeDays: minAge));
+                MinAgeDays: minAge,
+                Exclude: t.Exclude?.Select(x => x.Trim()).ToArray() ?? Array.Empty<string>()));
         }
 
         return (new CleanRule(dto.Id!.Trim(), dto.App!.Trim(), dto.Publisher, category, dto.Detect, targets, source), null);

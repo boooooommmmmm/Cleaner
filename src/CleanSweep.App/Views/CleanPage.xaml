@@ -129,6 +129,11 @@
                        Visibility="{Binding Note, Converter={StaticResource NullToVis}}"/>
             <TextBlock Text="{Binding LastReport}" Foreground="{StaticResource Brush.Risk.Safe}" FontWeight="SemiBold" TextWrapping="Wrap"
                        Visibility="{Binding LastReport, Converter={StaticResource NullToVis}}"/>
+            <Expander Header="{Binding ProblemTitle}" Margin="0,6,0,0" BorderThickness="0"
+                      Visibility="{Binding ProblemDetail, Converter={StaticResource NullToVis}}">
+                <TextBox Text="{Binding ProblemDetail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12" MaxHeight="220"
+                         VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent" Margin="0,4,0,0"/>
+            </Expander>
         </StackPanel>
     </Grid>
 </UserControl>

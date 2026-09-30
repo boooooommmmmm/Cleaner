@@ -72,6 +72,10 @@ public sealed partial class DiskViewModel : ObservableObject
 
     public bool HasLoaded { get; private set; }
 
+    /// <summary>普通权限下的提示：defrag 与 chkntfs /C 都需要管理员身份。</summary>
+    public string? ElevationHint => _s.Elevation.IsElevated ? null
+        : "当前为普通权限运行：分析、优化、修剪、碎片整理与计划检查磁盘都需要管理员身份，点击时会提示以管理员身份重新启动。";
+
     public DiskViewModel(AppServices s)
     {
         _s = s;
@@ -131,6 +135,20 @@ public sealed partial class DiskViewModel : ObservableObject
             return;
         }
 
+        // defrag / chkntfs /C 在普通权限下不会执行（defrag 只打印 0x89000024 且退出码为 0），先问是否以管理员身份重新启动
+        if (DiskHealth.RequiresElevation(op) && !_s.Elevation.IsElevated)
+        {
+            var choice = MessageBox.Show("磁盘优化与检查命令需要管理员身份，当前是普通权限运行。\n\n是否现在以管理员身份重新启动 CleanSweep？重新启动后回到本页再执行。",
+                "需要管理员身份", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (choice == MessageBoxResult.Yes)
+            {
+                var err = ElevationContext.RelaunchElevated();
+                if (err is null) { Application.Current.Shutdown(0); return; }
+                if (err != "已取消提权") MessageBox.Show($"无法以管理员身份重新启动：{err}", "CleanSweep", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            return;
+        }
+
         string title = op switch
         {
             DiskHealth.DiskOperation.Analyze => "分析碎片（只读）",
@@ -157,7 +175,10 @@ public sealed partial class DiskViewModel : ObservableObject
             var progress = new Progress<string>(line => Output += line + "\n");
             var result = await DiskHealth.RunAsync(op, row.Letter, row.Volume.Media, ct, progress);
             _s.Log.Write(null, "disk", op.ToString(), row.Letter, 0, result.Success, result.TimedOut ? "超时" : $"退出码 {result.ExitCode}");
-            Status = result.Success ? $"{title} 完成（{result.Elapsed.TotalSeconds:0} 秒）。" : result.TimedOut ? $"{title} 超时，已终止。" : $"{title} 退出码 {result.ExitCode}。";
+            Status = result.Success ? $"{title} 完成（{result.Elapsed.TotalSeconds:0} 秒）。"
+                : result.TimedOut ? $"{title} 超时，已终止。"
+                : DiskHealth.DescribeExitCode(result.ExitCode) is { } why ? $"{title} 未执行：{why}。"
+                : $"{title} 退出码 0x{unchecked((uint)result.ExitCode):X8}，详见命令输出。";
             if (string.IsNullOrWhiteSpace(Output)) Output = result.Output;
         }
         catch (Exception ex)

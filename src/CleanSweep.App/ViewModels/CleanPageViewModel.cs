@@ -51,6 +51,13 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [ObservableProperty]
     private string? _lastReport;
 
+    /// <summary>上次清理的失败 / 占用明细（页面内展开查看，为空时不显示）。</summary>
+    [ObservableProperty]
+    private string? _problemDetail;
+
+    [ObservableProperty]
+    private string _problemTitle = "";
+
     public CleanPageViewModel(AppServices s, string title, string subtitle, Func<IScanner[]> scanners, Func<string?>? postScanNote = null)
     {
         _s = s;
@@ -68,6 +75,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         IsBusy = true;
         HasResults = false;
         LastReport = null;
+        ProblemDetail = null;
         ClearGroups();
         Status = "正在扫描…";
 
@@ -222,6 +230,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
             var summary = $"{report.FilesQuarantined} 个文件与 {report.DirectoriesQuarantined} 个目录移入隔离区（{Format.Bytes(report.QuarantinedBytes)}，到期或永久删除后释放）";
             if (report.RegistryEntriesRemoved > 0) summary += $"，删除 {report.RegistryEntriesRemoved} 项注册表 / 服务 / 任务（已备份，可在设置中还原）";
             if (report.FreedBytes > 0) summary += $"，直接释放 {Format.Bytes(report.FreedBytes)}";
+            if (report.InUse > 0) summary += $"，{report.InUse} 个文件正在被其他程序使用，这次跳过（关闭相关程序后重新扫描即可）";
             if (report.Skipped > 0) summary += $"，跳过 {report.Skipped} 个已变化或白名单内的文件（所在项目保留在列表中）";
             if (report.Failures.Count > 0) summary += $"，{report.Failures.Count} 项失败（仍保留在列表中）";
             if (serviceItems.Count > 0) summary += $"；提权服务处理 {serviceItems.Count} 项（{Format.Bytes(serviceBytes)}）" + (serviceMessages.Count > 0 ? $"，{serviceMessages.Count} 条问题" : "");
@@ -230,13 +239,24 @@ public sealed partial class CleanPageViewModel : ObservableObject
             LastReport = summary;
             Status = incomplete.Count > 0 ? "清理完成，部分项目未完全处理。重新扫描可刷新这些项目的内容。" : "清理完成。";
 
+            // 失败与占用明细放在页面内可展开的列表里，不弹模态框；正在使用的文件单独一组，不算失败
+            var lines = new List<string>();
             var problems = report.Failures.Select(f => $"• {f.Path ?? f.ItemDisplayName}：{f.Reason}").Concat(serviceMessages.Select(m => "• " + m)).ToList();
             if (problems.Count > 0)
             {
-                var detail = string.Join("\n", problems.Take(15));
-                if (problems.Count > 15) detail += $"\n… 另有 {problems.Count - 15} 项";
-                MessageBox.Show($"以下项目未能清理：\n\n{detail}", "部分项目失败", MessageBoxButton.OK, MessageBoxImage.Information);
+                lines.Add($"未能清理（{problems.Count} 项）：");
+                lines.AddRange(problems.Take(50));
+                if (problems.Count > 50) lines.Add($"… 另有 {problems.Count - 50} 项，完整记录见操作日志");
             }
+            if (report.InUseFiles.Count > 0)
+            {
+                if (lines.Count > 0) lines.Add("");
+                lines.Add($"正在被其他程序使用，这次跳过（{report.InUseFiles.Count} 个）：");
+                lines.AddRange(report.InUseFiles.Take(30).Select(f => "• " + (f.Path ?? f.ItemDisplayName)));
+                if (report.InUseFiles.Count > 30) lines.Add($"… 另有 {report.InUseFiles.Count - 30} 个");
+            }
+            ProblemDetail = lines.Count > 0 ? string.Join("\n", lines) : null;
+            ProblemTitle = problems.Count > 0 ? $"查看未能清理的 {problems.Count} 项" : $"查看正在使用的 {report.InUseFiles.Count} 个文件";
         }
         catch (Exception ex)
         {

@@ -120,9 +120,11 @@ public sealed class RuleScanner : IScanner
                 }
                 else if (Directory.Exists(expandedPath))
                 {
+                    var exclude = target.Exclude.Count > 0 ? target.Exclude.ToArray() : null;
                     files = ctx.Guard
                         .EnumerateFiles(expandedPath, target.Pattern, target.Recurse, ct)
                         .Where(f => cutoff is null || f.LastWriteUtc < cutoff)
+                        .Where(f => exclude is null || !PathGuard.MatchesAny(Path.GetFileName(f.Path), exclude))
                         .ToList();
                 }
                 else

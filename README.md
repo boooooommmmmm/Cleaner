@@ -4,7 +4,7 @@
 
 ## 当前状态
 
-设计文档第 8 节的 M1 到 M6 已全部实现，发布前的横切工作（普通权限运行 + 提权服务、数据集签名与在线更新、自包含发布、安装脚本）也已完成；仍缺的只有正式代码签名证书与正式数据签名密钥（见“发布”一节）。对应功能：
+设计文档第 8 节的 M1 到 M6 已全部实现，发布前的横切工作（普通权限运行 + 提权服务、数据集签名与在线更新、自包含发布、安装脚本）也已完成；数据集与发布信息已用正式密钥（release-2026-09）签名，首个版本 v0.15.0 已发布到 GitHub Release；仍缺的是 EV 代码签名证书与在虚拟机以管理员身份做的端到端验收（见“已知限制”与“发布”）。对应功能：
 
 | 模块 | 状态 |
 |---|---|
@@ -84,8 +84,8 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.15.0"; git push
-# 在 GitHub 创建 tag v0.15.0 的 Release，上传 publish/CleanSweep-win-x64-0.15.0.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.16.0"; git push
+# 在 GitHub 创建 tag v0.16.0 的 Release，上传 publish/CleanSweep-win-x64-0.16.0.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。
@@ -133,13 +133,14 @@ docs/                     产品设计文档与审查报告
 
 `when` 字段：`installed` 目标在应用已安装时进入“应用缓存”；`uninstalled` 目标在应用已卸载时进入“用户目录残留清理”（M3）；`always` 用于系统规则。
 
-`path` 的目录段可以用 `*` 通配（`User Data\Profile *\Cache`、`Packages\*\TempState`）：只匹配直接子目录、不递归、跳过 Junction，最多 200 个；不能放在最后一段或紧跟环境变量。每个匹配目录是独立条目，名字带匹配到的段，例如“网页缓存（Profile 1）”。
+`path` 的目录段可以用 `*` 通配（`User Data\Profile *\Cache`、`Packages\*\TempState`）：只匹配直接子目录、不递归、跳过 Junction，最多 200 个；不能放在最后一段或紧跟环境变量。每个匹配目录是独立条目，名字带匹配到的段，例如“网页缓存（Profile 1）”。`files` 目标可加 `exclude`（文件名通配列表，如 `["TileCache_*"]`）排除目录里长期被进程独占的文件。
 
 ## 已知限制
 
 - 普通权限运行时清理的是当前登录用户的目录；装有提权服务时服务按连接方 SID 解析用户目录。只有“以管理员身份重新启动”且 UAC 输入了另一个管理员账户的凭据时，清理的才会是那个账户的配置文件。
 - 提权服务尚未在真实提权环境做端到端验证（本机只做过非提权下的协议、权限判定与只读界面验证）；提权运行下重启资源管理器的令牌启动路径、计划任务备份的重新注册同样待虚拟机验证。
-- 浏览器与资源管理器运行中时，部分缓存文件被占用，会在结果中列为失败，重启相关程序后再清理即可。
+- 浏览器、显卡驱动、开始菜单等运行中时，部分缓存文件被独占，这些文件按“正在使用，这次跳过”计数（不算失败），所在项目保留在列表里，关闭相关程序后重新扫描再清理即可。
+- 磁盘健康页的分析、优化、修剪、碎片整理与计划检查磁盘都需要管理员身份；普通权限运行时点击会提示以管理员身份重新启动（defrag.exe 在普通权限下什么都不做，只打印权限不足）。
 - 启动影响来自 `%LocalAppData%\Microsoft\Windows\StartupInfo`，与任务管理器同源；系统没有这些记录时显示“未测量”。
 - 微软自带的服务与计划任务默认隐藏，勾选“显示微软项”后可见；Shell 扩展与浏览器助手对象尚未纳入。
 
