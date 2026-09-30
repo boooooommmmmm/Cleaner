@@ -10,9 +10,19 @@ namespace CleanSweep.App.ViewModels;
 public sealed partial class ScanItemViewModel : ObservableObject
 {
     public ScanItem Item { get; }
+    private readonly Func<ScanItem, ItemExplanation.Text>? _explain;
+    private ItemExplanation.Text? _explanation;
 
     [ObservableProperty]
     private bool _isSelected;
+
+    /// <summary>"详情"展开：依据 / 影响 / 恢复方式。</summary>
+    [ObservableProperty]
+    private bool _isDetailOpen;
+
+    /// <summary>是否被结果筛选框过滤掉（只影响显示，不影响勾选与清理）。</summary>
+    [ObservableProperty]
+    private bool _isVisible = true;
 
     public event EventHandler? SelectionChanged;
 
@@ -20,11 +30,13 @@ public sealed partial class ScanItemViewModel : ObservableObject
 
     /// <param name="canSelect">当前权限下能否执行（不能时复选框禁用、默认不勾选）。</param>
     /// <param name="elevationHint">权限说明（"由提权服务执行" / "需要管理员权限…"），空表示不需要说明。</param>
-    public ScanItemViewModel(ScanItem item, bool canSelect, string elevationHint)
+    /// <param name="explain">生成"依据 / 影响 / 恢复方式"说明；null 时用不带隔离区目录的默认说明。</param>
+    public ScanItemViewModel(ScanItem item, bool canSelect, string elevationHint, Func<ScanItem, ItemExplanation.Text>? explain = null)
     {
         Item = item;
         CanSelect = canSelect;
         ElevationHint = elevationHint;
+        _explain = explain;
         _isSelected = item.DefaultSelected && canSelect;
     }
 
@@ -38,8 +50,8 @@ public sealed partial class ScanItemViewModel : ObservableObject
     public RiskLevel Risk => Item.Risk;
     public long SizeBytes => Item.SizeBytes;
     public string SizeText => Item.Kind == ItemKind.Command ? "大小未知" : Item.IsRegistryLike ? "—" : Format.Bytes(Item.SizeBytes);
-    /// <summary>说明文字；与名称相同时不重复显示。</summary>
-    public string Description => string.Equals(Item.Description, Item.DisplayName, StringComparison.Ordinal) ? "" : Item.Description;
+    /// <summary>说明文字；与名称相同、或名称只是"说明 + 括号后缀"（通配目录段展开的条目）时不重复显示。</summary>
+    public string Description => Item.Description.Length == 0 || Item.DisplayName.StartsWith(Item.Description, StringComparison.Ordinal) ? "" : Item.Description;
 
     public bool HasDescription => Description.Length > 0;
 
@@ -58,7 +70,27 @@ public sealed partial class ScanItemViewModel : ObservableObject
 
     public bool CanOpenLocation => Item.Path is not null && !Item.IsRegistryLike;
 
+    private ItemExplanation.Text Explanation => _explanation ??= _explain?.Invoke(Item) ?? ItemExplanation.For(Item, 30);
+
+    public string Basis => Explanation.Basis;
+    public string Effect => Explanation.Effect;
+    public string Recovery => Explanation.Recovery;
+    public string? Preconditions => Explanation.Preconditions;
+
+    /// <summary>结果筛选：名称、说明、路径任一包含关键字（不分大小写）。</summary>
+    public bool MatchesFilter(string? keyword)
+    {
+        if (string.IsNullOrWhiteSpace(keyword)) return true;
+        var k = keyword.Trim();
+        return Name.Contains(k, StringComparison.OrdinalIgnoreCase)
+               || Description.Contains(k, StringComparison.OrdinalIgnoreCase)
+               || Detail.Contains(k, StringComparison.OrdinalIgnoreCase);
+    }
+
     partial void OnIsSelectedChanged(bool value) => SelectionChanged?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand]
+    private void ToggleDetail() => IsDetailOpen = !IsDetailOpen;
 
     [RelayCommand]
     private void OpenLocation()
@@ -87,6 +119,10 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     [ObservableProperty]
     private bool _isExpanded = true;
 
+    /// <summary>结果筛选后组内还有可见项。</summary>
+    [ObservableProperty]
+    private bool _isVisible = true;
+
     public event EventHandler? SelectionChanged;
 
     private bool _suppress;
@@ -106,6 +142,35 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     public int SelectedCount => Items.Count(i => i.IsSelected);
     public string TotalText => Format.Bytes(TotalBytes);
     public string SelectedText => $"已选 {SelectedCount}/{Items.Count} 项 · {Format.Bytes(SelectedBytes)}";
+
+    public int CountByRisk(RiskLevel risk) => Items.Count(i => i.Risk == risk);
+
+    private bool? _expandedBeforeFilter;
+
+    /// <summary>
+    /// 应用结果筛选：逐项设置可见性；筛选命中时把组展开让结果直接可见，清除筛选后恢复用户原来的折叠状态。
+    /// </summary>
+    public void ApplyFilter(string? keyword)
+    {
+        var filtering = !string.IsNullOrWhiteSpace(keyword);
+        var any = false;
+        foreach (var i in Items)
+        {
+            i.IsVisible = !filtering || i.MatchesFilter(keyword);
+            any |= i.IsVisible;
+        }
+        IsVisible = any;
+        if (filtering)
+        {
+            _expandedBeforeFilter ??= IsExpanded;
+            if (any) IsExpanded = true;
+        }
+        else if (_expandedBeforeFilter is { } saved)
+        {
+            IsExpanded = saved;
+            _expandedBeforeFilter = null;
+        }
+    }
 
     /// <summary>三态：全选 true、全不选 false、部分 null。只按当前权限下可选的条目计算，禁用的条目不算"未选"。</summary>
     public bool? IsChecked

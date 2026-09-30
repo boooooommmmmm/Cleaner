@@ -1,0 +1,122 @@
+<UserControl x:Class="CleanSweep.App.Views.HardwarePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:HardwareViewModel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,20" MaxWidth="1100" HorizontalAlignment="Left">
+            <Grid>
+                <StackPanel Margin="0,0,220,0">
+                    <TextBlock Text="硬件状态" Style="{StaticResource Text.Title}"/>
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                               Text="处理器、内存、温度、显卡、磁盘与电池的实时读数，以及 Windows 自带的诊断工具入口。全部只读，不安装任何驱动。"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top">
+                    <CheckBox Content="自动刷新" IsChecked="{Binding AutoRefresh}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                    <Button Content="刷新" Command="{Binding RefreshCommand}" MinWidth="90"/>
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="{Binding UpdatedText}" Style="{StaticResource Text.Secondary}" Margin="0,12,0,0" HorizontalAlignment="Right"/>
+
+            <ItemsControl ItemsSource="{Binding Groups}" Margin="0,4,0,0">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type vm:HardwareGroupRow}">
+                        <Border Style="{StaticResource Card}" Width="340" Margin="0,0,12,12" VerticalAlignment="Top">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="15"/>
+                                <ItemsControl ItemsSource="{Binding Items}" Margin="0,6,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="{x:Type vm:HardwareReadingRow}">
+                                            <StackPanel Margin="0,6,0,0">
+                                                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.Secondary}"/>
+                                                <TextBlock Text="{Binding Value}" TextWrapping="Wrap" Margin="0,1,0,0" ToolTip="{Binding Value}">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                            <Setter Property="FontWeight" Value="SemiBold"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Warning}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Risk.High}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                                <ProgressBar Value="{Binding Percent, Mode=OneWay}" Maximum="100" Height="6" BorderThickness="0" Margin="0,4,0,0"
+                                                             Visibility="{Binding HasPercent, Converter={StaticResource BoolToVis}}">
+                                                    <ProgressBar.Style>
+                                                        <Style TargetType="ProgressBar">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Warning}" Value="True">
+                                                                    <Setter Property="Foreground" Value="{StaticResource Brush.Risk.High}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ProgressBar.Style>
+                                                </ProgressBar>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock Text="{Binding Notes}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,0,0,12"
+                       Visibility="{Binding Notes, Converter={StaticResource NullToVis}}"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="系统自带工具" FontWeight="SemiBold" FontSize="15"/>
+                    <TextBlock Text="只调用 Windows 自带程序，不内置第三方工具。带“需要管理员”的会弹出系统的权限确认。" Style="{StaticResource Text.Secondary}" Margin="0,4,0,6"/>
+                    <ItemsControl ItemsSource="{Binding Tools}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <UniformGrid Columns="2"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:ToolRow}">
+                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8" Margin="0,0,12,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold" FontSize="13"/>
+                                                <Border Style="{StaticResource RiskBadge}" Background="{StaticResource Brush.Risk.Confirm}" Margin="8,0,0,0"
+                                                        Visibility="{Binding HasBadge, Converter={StaticResource BoolToVis}}">
+                                                    <TextBlock Text="{Binding Badge}" Foreground="White" FontSize="11"/>
+                                                </Border>
+                                            </StackPanel>
+                                            <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="1" Content="打开" Style="{StaticResource Button.Link}" VerticalAlignment="Top"
+                                                AutomationProperties.Name="{Binding Title, StringFormat=打开 {0}}"
+                                                Command="{Binding DataContext.LaunchToolCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

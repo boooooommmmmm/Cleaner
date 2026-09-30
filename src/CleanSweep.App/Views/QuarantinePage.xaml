@@ -10,26 +10,121 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <StackPanel Grid.Row="0">
             <TextBlock Text="隔离区" Style="{StaticResource Text.Title}"/>
-            <TextBlock Text="所有被清理的文件都先移到这里，到期后自动删除。发现误删可随时恢复到原位置。" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
+            <TextBlock Text="所有被清理的文件都先移到所在磁盘的隔离目录，到期后自动删除。发现误删可随时恢复到原位置。" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
         </StackPanel>
 
-        <Grid Grid.Row="1" Margin="0,18,0,12">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="刷新" Command="{Binding RefreshCommand}"/>
-                <Button Content="全部恢复" Command="{Binding RestoreAllCommand}" Margin="8,0,0,0"/>
-                <Button Content="删除过期项" Command="{Binding PurgeExpiredCommand}" Margin="8,0,0,0"/>
-                <Button Content="清空隔离区" Style="{StaticResource Button.Danger}" Command="{Binding PurgeAllCommand}" Margin="8,0,0,0"/>
-            </StackPanel>
-            <TextBlock Text="{Binding Summary}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+        <!-- 按磁盘概览 -->
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Volumes}" Margin="0,14,0,0"
+                      Visibility="{Binding Volumes.Count, Converter={StaticResource CountToVis}}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type vm:QuarantineVolumeCard}">
+                    <Border Width="300" Margin="0,0,12,8" Padding="14,10" CornerRadius="8" BorderThickness="1" Background="{StaticResource Brush.Surface}"
+                            AutomationProperties.Name="{Binding AutomationName}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="{StaticResource Brush.Border}"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                        <Setter Property="BorderBrush" Value="{StaticResource Brush.Accent}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+                        <StackPanel>
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="16" VerticalAlignment="Center" Foreground="{StaticResource Brush.TextSecondary}"/>
+                                    <TextBlock Text="{Binding Root}" FontWeight="SemiBold" FontSize="16" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding CountText}" Style="{StaticResource Text.Secondary}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding SizeText}" FontWeight="SemiBold" FontSize="14" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                            </Grid>
+                            <TextBlock Text="{Binding Directory}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0" ToolTip="{Binding Directory}"/>
+                            <TextBlock Text="{Binding ExpiryText}" Margin="0,2,0,0" TextWrapping="Wrap" FontSize="12"
+                                       Visibility="{Binding ExpiryText, Converter={StaticResource NullToVis}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Secondary}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasExpired}" Value="True">
+                                                <Setter Property="Foreground" Value="{StaticResource Brush.Risk.Confirm}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <StackPanel Orientation="Horizontal" Margin="-8,4,0,0">
+                                <Button AutomationProperties.Name="{Binding Root, StringFormat=只看 {0}}"
+                                        Command="{Binding DataContext.SelectVolumeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource Button.Link}">
+                                            <Setter Property="Content" Value="只看此盘"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                                    <Setter Property="Content" Value="显示全部"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                                <Button Content="打开目录" Style="{StaticResource Button.Link}" AutomationProperties.Name="{Binding Root, StringFormat=打开目录 {0}}"
+                                        Command="{Binding DataContext.OpenVolumeDirCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                <Button Content="释放此盘" Style="{StaticResource Button.Link}" Foreground="{StaticResource Brush.Danger}" AutomationProperties.Name="{Binding Root, StringFormat=释放 {0}}"
+                                        Command="{Binding DataContext.PurgeVolumeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <!-- 工具栏与筛选 -->
+        <Grid Grid.Row="2" Margin="0,8,0,12">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0">
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="刷新" Command="{Binding RefreshCommand}"/>
+                    <Button Content="全部恢复" Command="{Binding RestoreAllCommand}" Margin="8,0,0,0"/>
+                    <Button Content="删除过期项" Command="{Binding PurgeExpiredCommand}" Margin="8,0,0,0"/>
+                    <Button Content="清空隔离区" Style="{StaticResource Button.Danger}" Command="{Binding PurgeAllCommand}" Margin="8,0,0,0"/>
+                </StackPanel>
+                <TextBlock Text="{Binding Summary}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            </Grid>
+            <Grid Grid.Row="1" Margin="0,8,0,0" Visibility="{Binding Volumes.Count, Converter={StaticResource CountToVis}}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="260"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Column="0">
+                    <TextBox Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" VerticalContentAlignment="Center" AutomationProperties.Name="搜索隔离项"/>
+                    <TextBlock Text="按路径或来源搜索…" Style="{StaticResource Text.Secondary}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Visibility="{Binding SearchText.Length, Converter={StaticResource CountToVis}, ConverterParameter=invert}"/>
+                </Grid>
+                <ComboBox Grid.Column="1" ItemsSource="{Binding Batches}" SelectedItem="{Binding SelectedBatch}" DisplayMemberPath="Label" MinWidth="200" MaxWidth="460" Margin="8,0,0,0"
+                          VerticalContentAlignment="Center" AutomationProperties.Name="按批次筛选"/>
+                <Button Grid.Column="2" Content="清除筛选" Style="{StaticResource Button.Link}" Command="{Binding ClearFilterCommand}" Margin="8,0,0,0"
+                        Visibility="{Binding IsFiltered, Converter={StaticResource BoolToVis}}"/>
+                <TextBlock Grid.Column="3" Text="{Binding FilterText}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
         </Grid>
 
-        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
+        <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
             <Grid>
                 <ListView ItemsSource="{Binding Rows}" BorderThickness="0" SelectionMode="Single">
                     <ListView.View>
@@ -52,7 +147,23 @@
                             <GridViewColumn Header="大小" Width="90" DisplayMemberBinding="{Binding SizeText}"/>
                             <GridViewColumn Header="来源" Width="150" DisplayMemberBinding="{Binding Source}"/>
                             <GridViewColumn Header="隔离时间" Width="130" DisplayMemberBinding="{Binding QuarantinedText}"/>
-                            <GridViewColumn Header="到期" Width="130" DisplayMemberBinding="{Binding ExpiresText}"/>
+                            <GridViewColumn Header="到期" Width="130">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:QuarantineRow}">
+                                        <TextBlock Text="{Binding ExpiresText}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding IsExpired}" Value="True">
+                                                            <Setter Property="Foreground" Value="{StaticResource Brush.Risk.Confirm}"/>
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
                             <GridViewColumn Header="操作" Width="150">
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate DataType="{x:Type vm:QuarantineRow}">
@@ -74,11 +185,22 @@
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
                             Visibility="{Binding Rows.Count, Converter={StaticResource CountToVis}, ConverterParameter=invert}">
                     <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource Brush.TextSecondary}"/>
-                    <TextBlock Text="隔离区为空" Style="{StaticResource Text.Subtitle}" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                    <TextBlock Margin="0,12,0,0" HorizontalAlignment="Center">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource Text.Subtitle}">
+                                <Setter Property="Text" Value="隔离区为空"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsFiltered}" Value="True">
+                                        <Setter Property="Text" Value="没有符合筛选条件的项"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <TextBlock Grid.Row="3" Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,10,0,0"/>
+        <TextBlock Grid.Row="4" Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,10,0,0"/>
     </Grid>
 </UserControl>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Windows;
 using CleanSweep.App.Helpers;
 using CleanSweep.App.Services;
@@ -20,23 +21,82 @@ public sealed class QuarantineRow
     public string QuarantinedText => Format.LocalTime(Entry.QuarantinedUtc);
     public string ExpiresText => Format.LocalTime(Entry.ExpiresUtc);
     public string Source => Entry.DisplayName;
+    public bool IsExpired => Entry.ExpiresUtc <= DateTime.UtcNow;
+}
+
+/// <summary>隔离区页顶部的"按磁盘"概览卡。</summary>
+public sealed partial class QuarantineVolumeCard : ObservableObject
+{
+    public required QuarantineVolumeSummary Summary { get; init; }
+    public string Root => Summary.Root;
+    public string Directory => Summary.Directory;
+    public string CountText => $"{Summary.Count:N0} 项";
+    public string SizeText => Format.Bytes(Summary.Bytes);
+    public string ExpiryText => Summary.ExpiredCount > 0
+        ? $"已到期 {Summary.ExpiredCount:N0} 项（{Format.Bytes(Summary.ExpiredBytes)}），点“删除过期项”即可释放"
+        : Summary.NextExpiryUtc is { } n ? $"最早 {Format.LocalTime(n)} 到期" : "";
+    public bool HasExpired => Summary.ExpiredCount > 0;
+
+    /// <summary>已选为筛选条件（只看此盘）。</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
+    public string AutomationName => $"磁盘 {Root}";
+}
+
+public sealed class QuarantineBatchOption
+{
+    public QuarantineBatchSummary? Batch { get; init; }
+    public string Label => Batch is null
+        ? "全部批次"
+        : $"{Format.LocalTime(Batch.QuarantinedUtc)} · {Batch.Count:N0} 项 · {Format.Bytes(Batch.Bytes)} · {string.Join("、", Batch.ModuleIds.Select(ModuleName))}";
+
+    private static string ModuleName(string id) => id switch
+    {
+        "system-junk" => "系统清理",
+        "app-cache" => "应用缓存",
+        "residue" => "残留清理",
+        "dev-cache" => "开发者缓存",
+        "privacy" => "隐私清理",
+        "registry" => "注册表清理",
+        "uninstall" => "软件卸载",
+        _ => id,
+    };
 }
 
 public sealed partial class QuarantineViewModel : ObservableObject
 {
     private readonly AppServices _s;
+    private IReadOnlyList<QuarantineEntry> _all = Array.Empty<QuarantineEntry>();
+    private bool _suppressFilter;
 
     [ObservableProperty]
     private ObservableCollection<QuarantineRow> _rows = new();
 
+    /// <summary>按磁盘的概览卡；点卡片只看该盘。</summary>
+    public ObservableCollection<QuarantineVolumeCard> Volumes { get; } = new();
+
+    /// <summary>按清理批次筛选，第一项是"全部批次"。</summary>
+    public ObservableCollection<QuarantineBatchOption> Batches { get; } = new();
+
+    [ObservableProperty]
+    private QuarantineBatchOption? _selectedBatch;
+
+    [ObservableProperty]
+    private string _searchText = "";
+
     [ObservableProperty]
     private string _summary = "";
+
+    /// <summary>筛选后的说明（"显示 12 / 共 340 项"）；没有筛选时为空。</summary>
+    [ObservableProperty]
+    private string _filterText = "";
 
     [ObservableProperty]
     private string _status = "";
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(RestoreAllCommand), nameof(PurgeAllCommand), nameof(PurgeExpiredCommand), nameof(RestoreCommand), nameof(PurgeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RestoreAllCommand), nameof(PurgeAllCommand), nameof(PurgeExpiredCommand), nameof(RestoreCommand), nameof(PurgeCommand), nameof(PurgeVolumeCommand))]
     private bool _isBusy;
 
     public QuarantineViewModel(AppServices s)
@@ -47,15 +107,100 @@ public sealed partial class QuarantineViewModel : ObservableObject
 
     private bool NotBusy => !IsBusy;
 
+    public bool IsFiltered => SelectedVolumeRoot is not null || SelectedBatch?.Batch is not null || !string.IsNullOrWhiteSpace(SearchText);
+
+    private string? SelectedVolumeRoot => Volumes.FirstOrDefault(v => v.IsSelected)?.Root;
+
     [RelayCommand]
     private void Refresh()
     {
-        var entries = _s.Quarantine.ListActive();
-        // 一次性替换集合，避免大批量逐条 Add 触发几万次集合变更通知
-        Rows = new ObservableCollection<QuarantineRow>(entries.Select(e => new QuarantineRow { Entry = e }));
-        Summary = entries.Count == 0
+        _all = _s.Quarantine.ListActive();
+        var now = DateTime.UtcNow;
+        _suppressFilter = true;
+
+        // 概览卡：保留已选中的盘（刷新后它还在的话）
+        var selectedRoot = SelectedVolumeRoot;
+        Volumes.Clear();
+        foreach (var v in QuarantineOverview.ByVolume(_all, now, _s.Quarantine.GetQuarantineRoot))
+        {
+            var card = new QuarantineVolumeCard { Summary = v, IsSelected = string.Equals(v.Root, selectedRoot, StringComparison.OrdinalIgnoreCase) };
+            card.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(QuarantineVolumeCard.IsSelected)) ApplyFilter(); };
+            Volumes.Add(card);
+        }
+
+        var selectedBatchId = SelectedBatch?.Batch?.BatchId;
+        Batches.Clear();
+        Batches.Add(new QuarantineBatchOption());
+        foreach (var b in QuarantineOverview.ByBatch(_all)) Batches.Add(new QuarantineBatchOption { Batch = b });
+        SelectedBatch = Batches.FirstOrDefault(b => b.Batch?.BatchId == selectedBatchId) ?? Batches[0];
+
+        Summary = _all.Count == 0
             ? "隔离区为空。"
-            : $"{entries.Count:N0} 项，共 {Format.Bytes(entries.Sum(e => e.SizeBytes))}。默认保留 {_s.Settings.RetentionDays} 天后自动删除。";
+            : $"{_all.Count:N0} 项，共 {Format.Bytes(_all.Sum(e => e.SizeBytes))}，分布在 {Volumes.Count} 个磁盘。默认保留 {_s.Settings.RetentionDays} 天后自动删除。";
+        _suppressFilter = false;
+        ApplyFilter();
+    }
+
+    partial void OnSearchTextChanged(string value) => ApplyFilter();
+    partial void OnSelectedBatchChanged(QuarantineBatchOption? value) => ApplyFilter();
+
+    private void ApplyFilter()
+    {
+        if (_suppressFilter) return;
+        var root = SelectedVolumeRoot;
+        var batch = SelectedBatch?.Batch?.BatchId;
+        IEnumerable<QuarantineEntry> q = _all;
+        if (root is not null) q = q.Where(e => QuarantineOverview.OnVolume(e, root));
+        if (batch is not null) q = q.Where(e => e.BatchId == batch);
+        if (!string.IsNullOrWhiteSpace(SearchText)) q = q.Where(e => QuarantineOverview.Matches(e, SearchText));
+        var list = q.ToList();
+        // 一次性替换集合，避免大批量逐条 Add 触发几万次集合变更通知
+        Rows = new ObservableCollection<QuarantineRow>(list.Select(e => new QuarantineRow { Entry = e }));
+        FilterText = IsFiltered ? $"显示 {list.Count:N0} / 共 {_all.Count:N0} 项（{Format.Bytes(list.Sum(e => e.SizeBytes))}）" : "";
+        OnPropertyChanged(nameof(IsFiltered));
+    }
+
+    /// <summary>点概览卡：只看这个盘；再点一次取消。</summary>
+    [RelayCommand]
+    private void SelectVolume(QuarantineVolumeCard? card)
+    {
+        if (card is null) return;
+        var on = !card.IsSelected;
+        _suppressFilter = true;
+        foreach (var v in Volumes) v.IsSelected = false;
+        card.IsSelected = on;
+        _suppressFilter = false;
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void ClearFilter()
+    {
+        _suppressFilter = true;
+        foreach (var v in Volumes) v.IsSelected = false;
+        SelectedBatch = Batches.FirstOrDefault();
+        SearchText = "";
+        _suppressFilter = false;
+        ApplyFilter();
+    }
+
+    [RelayCommand]
+    private void OpenVolumeDir(QuarantineVolumeCard? card)
+    {
+        if (card is null) return;
+        try
+        {
+            if (!System.IO.Directory.Exists(card.Directory))
+            {
+                Status = $"目录不存在：{card.Directory}";
+                return;
+            }
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{card.Directory}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Status = "打开目录失败：" + ex.Message;
+        }
     }
 
     /// <summary>
@@ -103,12 +248,14 @@ public sealed partial class QuarantineViewModel : ObservableObject
     private string ElevationAdvice(Exception ex) =>
         AccessDenied.Is(ex) && !_s.Elevation.IsElevated ? "\n\n该位置需要管理员权限，请点击左下角“以管理员身份重新启动”后再试。" : "";
 
+    /// <summary>"全部恢复"作用于当前显示的项：有筛选时只恢复筛选结果，确认框里说清楚。</summary>
     [RelayCommand(CanExecute = nameof(NotBusy))]
     private async Task RestoreAllAsync()
     {
         var rows = Rows.ToList();
         if (rows.Count == 0) return;
-        if (MessageBox.Show($"恢复全部 {rows.Count:N0} 项到原位置？", "隔离区", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
+        var scope = IsFiltered ? $"当前筛选出的 {rows.Count:N0} 项" : $"全部 {rows.Count:N0} 项";
+        if (MessageBox.Show($"恢复{scope}到原位置？", "隔离区", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
 
         await RunBulkAsync("正在恢复", rows, row =>
         {
@@ -137,17 +284,34 @@ public sealed partial class QuarantineViewModel : ObservableObject
         Refresh();
     }
 
+    /// <summary>"清空隔离区"作用于当前显示的项：有筛选时只删筛选结果。</summary>
     [RelayCommand(CanExecute = nameof(NotBusy))]
     private async Task PurgeAllAsync()
     {
         var rows = Rows.ToList();
         if (rows.Count == 0) return;
         var bytes = rows.Sum(r => r.Entry.SizeBytes);
-        if (MessageBox.Show($"永久删除隔离区全部 {rows.Count:N0} 项（{Format.Bytes(bytes)}）？此操作不可恢复。",
+        var scope = IsFiltered ? $"当前筛选出的 {rows.Count:N0} 项" : $"隔离区全部 {rows.Count:N0} 项";
+        if (MessageBox.Show($"永久删除{scope}（{Format.Bytes(bytes)}）？此操作不可恢复。",
                 "清空隔离区", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
 
         await RunBulkAsync("正在删除", rows, row => _s.Quarantine.Purge(row.Entry.Id), ElevatedOperation.PurgeQuarantineItem, "已永久删除");
         _s.Log.Write(null, "quarantine", "purge-all", null, bytes, true, $"{rows.Count} 项");
+    }
+
+    /// <summary>概览卡上的"释放此盘"：永久删除该盘上的全部隔离项，不受当前筛选影响。</summary>
+    [RelayCommand(CanExecute = nameof(NotBusy))]
+    private async Task PurgeVolumeAsync(QuarantineVolumeCard? card)
+    {
+        if (card is null) return;
+        var rows = _all.Where(e => QuarantineOverview.OnVolume(e, card.Root)).Select(e => new QuarantineRow { Entry = e }).ToList();
+        if (rows.Count == 0) return;
+        var bytes = rows.Sum(r => r.Entry.SizeBytes);
+        if (MessageBox.Show($"永久删除 {card.Root} 上的全部 {rows.Count:N0} 个隔离项（{Format.Bytes(bytes)}）？此操作不可恢复，其他磁盘的隔离项不受影响。",
+                $"释放 {card.Root}", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+
+        await RunBulkAsync("正在删除", rows, row => _s.Quarantine.Purge(row.Entry.Id), ElevatedOperation.PurgeQuarantineItem, "已永久删除");
+        _s.Log.Write(null, "quarantine", "purge-volume", card.Root, bytes, true, $"{rows.Count} 项");
     }
 
     [RelayCommand(CanExecute = nameof(NotBusy))]

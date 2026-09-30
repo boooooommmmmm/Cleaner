@@ -58,6 +58,14 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [ObservableProperty]
     private string _problemTitle = "";
 
+    /// <summary>结果筛选关键字（名称 / 说明 / 路径），只影响显示。</summary>
+    [ObservableProperty]
+    private string _filterText = "";
+
+    /// <summary>风险分布："安全 12 · 建议确认 3 · 高风险 1"。</summary>
+    [ObservableProperty]
+    private string _riskSummary = "";
+
     public CleanPageViewModel(AppServices s, string title, string subtitle, Func<IScanner[]> scanners, Func<string?>? postScanNote = null)
     {
         _s = s;
@@ -101,7 +109,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
                     var hint = elevation.HintFor(i);
                     if (!can) needAdmin++;
                     else if (elevation.ViaService(i)) viaService++;
-                    return new ScanItemViewModel(i, can, hint);
+                    return new ScanItemViewModel(i, can, hint, Explain);
                 }));
                 group.SelectionChanged += (_, _) => UpdateTotals();
                 // 条目很多的分组（如 MUI 缓存孤儿）默认折叠，避免淹没其他分组
@@ -135,6 +143,16 @@ public sealed partial class CleanPageViewModel : ObservableObject
     }
 
     private bool CanClean => !IsBusy && HasResults && Groups.Any(g => g.SelectedCount > 0);
+
+    private ItemExplanation.Text Explain(ScanItem item) => ItemExplanation.For(item, _s.Settings.RetentionDays, _s.Quarantine.GetQuarantineRoot);
+
+    partial void OnFilterTextChanged(string value)
+    {
+        foreach (var g in Groups) g.ApplyFilter(value);
+    }
+
+    [RelayCommand]
+    private void ClearFilter() => FilterText = "";
 
     /// <summary>取消当前正在进行的扫描或清理。</summary>
     [RelayCommand]
@@ -303,6 +321,13 @@ public sealed partial class CleanPageViewModel : ObservableObject
         TotalText = Format.Bytes(Groups.Sum(g => g.TotalBytes));
         var count = Groups.Sum(g => g.SelectedCount);
         SelectedText = count == 0 ? "未选择任何项目" : $"已选择 {count} 项，{Format.Bytes(Groups.Sum(g => g.SelectedBytes))}";
+        var parts = new List<string>();
+        foreach (var (risk, label) in new[] { (RiskLevel.Safe, "安全"), (RiskLevel.Confirm, "建议确认"), (RiskLevel.High, "高风险"), (RiskLevel.NotRecommended, "不建议") })
+        {
+            var n = Groups.Sum(g => g.CountByRisk(risk));
+            if (n > 0) parts.Add($"{label} {n}");
+        }
+        RiskSummary = string.Join(" · ", parts);
         CleanCommand.NotifyCanExecuteChanged();
     }
 
@@ -311,5 +336,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         Groups.Clear();
         TotalText = "";
         SelectedText = "";
+        RiskSummary = "";
+        FilterText = "";
     }
 }

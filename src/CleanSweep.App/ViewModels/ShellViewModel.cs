@@ -109,13 +109,13 @@ public sealed partial class ShellViewModel : ObservableObject
         _ = s.Elevation.ProbeServiceAsync();
         Add(new NavItem
         {
-            Group = "清理", Title = "系统清理", Glyph = "",
+            Group = "清理", Title = "系统清理", Glyph = "",
             Page = new CleanPageViewModel(s, "系统清理", "临时文件、日志、更新缓存、回收站等系统垃圾。默认只勾选“安全”级项目。",
                 () => new[] { RuleScanner.SystemJunk() }),
         });
         Add(new NavItem
         {
-            Group = "清理", Title = "应用缓存", Glyph = "",
+            Group = "清理", Title = "应用缓存", Glyph = "",
             Page = new CleanPageViewModel(s, "应用缓存", "浏览器与常用软件的缓存。只清理已安装应用的缓存，配置与用户数据不会被触碰。",
                 () => new[] { RuleScanner.AppCache() }),
         });
@@ -125,12 +125,12 @@ public sealed partial class ShellViewModel : ObservableObject
             "“确认残留”默认勾选，“疑似残留”只展示体积。含登录态、许可证或存档的目录会单独提示。",
             s.CreateResidueScanners, ResidueNote);
         _residuePage.ScanCompleted += (_, _) => s.ResidueOptions.OnlyAppName = null;
-        Add(new NavItem { Group = "清理", Title = "残留清理", Glyph = "", Page = _residuePage });
+        Add(new NavItem { Group = "清理", Title = "残留清理", Glyph = "", Page = _residuePage });
 
-        Add(new NavItem { Group = "管理", Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor) });
+        Add(new NavItem { Group = "管理", Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor) });
         Add(new NavItem
         {
-            Group = "清理", Title = "开发者缓存", Glyph = "",
+            Group = "清理", Title = "开发者缓存", Glyph = "",
             Page = new CleanPageViewModel(s, "开发者缓存",
                 "Gradle、Maven、NuGet、npm、pip、Docker 等工具的缓存目录，只清缓存不清配置；项目中长期未动的 node_modules；conda 环境只列出不默认勾选。" +
                 "在“设置”中添加项目根目录后才会查找 node_modules。",
@@ -138,7 +138,7 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Add(new NavItem
         {
-            Group = "清理", Title = "注册表清理", Glyph = "",
+            Group = "清理", Title = "注册表清理", Glyph = "",
             Page = new CleanPageViewModel(s, "注册表清理",
                 "移除已卸载软件遗留的注册表配置，不是提速手段。安全级：无效卸载项、失效快捷方式、MUI 缓存孤儿；建议确认：遗留的软件键、失效文件关联与 App Paths、指向不存在程序的服务与计划任务；" +
                 "高风险：失效 COM 注册与共享 DLL 计数。每一项删除前自动备份，可在“设置 → 备份与还原”中一键还原。",
@@ -146,25 +146,26 @@ public sealed partial class ShellViewModel : ObservableObject
         });
         Add(new NavItem
         {
-            Group = "清理", Title = "隐私清理", Glyph = "",
+            Group = "清理", Title = "隐私清理", Glyph = "",
             Page = new CleanPageViewModel(s, "隐私清理",
                 "最近使用的文件记录、跳转列表、运行 / 地址栏 / 搜索历史、文件对话框历史、活动历史。文件类走隔离区可恢复，注册表类删除前备份。" +
                 "剪贴板历史请在“设置 → 系统 → 剪贴板”中清除；浏览器历史由各浏览器自行管理。",
                 s.CreatePrivacyScanners),
         });
-        Add(new NavItem { Group = "优化", Title = "开机加速", Glyph = "", Page = new StartupViewModel(s) });
-        Add(new NavItem { Group = "优化", Title = "磁盘健康", Glyph = "", Page = new DiskViewModel(s) });
-        Add(new NavItem { Group = "优化", Title = "内存与进程", Glyph = "", Page = new MemoryViewModel(s) });
-        Add(new NavItem { Group = "优化", Title = "系统优化", Glyph = "", Page = new OptimizeViewModel(s) });
-        Add(new NavItem { Group = "管理", Title = "驱动与更新", Glyph = "", Page = new DriverViewModel(s) });
-        Add(new NavItem { Group = "管理", Title = "弹窗拦截", Glyph = "", Page = new PopupViewModel(s) });
-        Add(new NavItem { Group = "管理", Title = "系统修复", Glyph = "", Page = new RepairViewModel(s) });
-        Add(new NavItem { Group = "管理", Title = "系统信息", Glyph = "", Page = new SystemInfoViewModel() });
-        Add(new NavItem { Group = "空间", Title = "空间分析", Glyph = "", Page = new SpaceAnalyzerViewModel(s) });
-        Add(new NavItem { Group = "空间", Title = "重复文件", Glyph = "", Page = new DuplicatesViewModel(s) });
-        Add(new NavItem { Group = "空间", Title = "文件粉碎", Glyph = "", Page = new ShredViewModel(s) });
-        Add(new NavItem { Title = "隔离区", Glyph = "", Page = new QuarantineViewModel(s) });
-        Add(new NavItem { Title = "设置", Glyph = "", Page = new SettingsViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "开机加速", Glyph = "", Page = new StartupViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "磁盘健康", Glyph = "", Page = new DiskViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "内存与进程", Glyph = "", Page = new MemoryViewModel(s) });
+        Add(new NavItem { Group = "优化", Title = "系统优化", Glyph = "", Page = new OptimizeViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "驱动与更新", Glyph = "", Page = new DriverViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "弹窗拦截", Glyph = "", Page = new PopupViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "系统修复", Glyph = "", Page = new RepairViewModel(s) });
+        Add(new NavItem { Group = "管理", Title = "系统信息", Glyph = "", Page = new SystemInfoViewModel() });
+        Add(new NavItem { Group = "管理", Title = "硬件状态", Glyph = "", Page = new HardwareViewModel(s) });
+        Add(new NavItem { Group = "空间", Title = "空间分析", Glyph = "", Page = new SpaceAnalyzerViewModel(s) });
+        Add(new NavItem { Group = "空间", Title = "重复文件", Glyph = "", Page = new DuplicatesViewModel(s) });
+        Add(new NavItem { Group = "空间", Title = "文件粉碎", Glyph = "", Page = new ShredViewModel(s) });
+        Add(new NavItem { Title = "隔离区", Glyph = "", Page = new QuarantineViewModel(s) });
+        Add(new NavItem { Title = "设置", Glyph = "", Page = new SettingsViewModel(s) });
 
         Items[0].IsSelected = true;
 
@@ -253,8 +254,12 @@ public sealed partial class ShellViewModel : ObservableObject
         if (Groups.FirstOrDefault(g => g.Items.Contains(item)) is { IsExpanded: false } group) group.IsExpanded = true;
     }
 
-    partial void OnSelectedChanged(NavItem? value)
+    partial void OnSelectedChanged(NavItem? oldValue, NavItem? newValue)
     {
+        var value = newValue;
+        // 硬件状态页的自动刷新只在它显示时跑
+        if (oldValue?.Page is HardwareViewModel hwOld) hwOld.IsActive = false;
+        if (value?.Page is HardwareViewModel hw) hw.IsActive = true; // 进入即采样一次
         if (value?.Page is QuarantineViewModel q) q.RefreshCommand.Execute(null);
         if (value?.Page is SettingsViewModel st) st.RefreshCommand.Execute(null);
         if (value?.Page is StartupViewModel su && !su.HasScanned && !su.IsBusy) su.RefreshCommand.Execute(null);

@@ -230,6 +230,9 @@
             <DataTemplate DataType="{x:Type vm:SystemInfoViewModel}">
                 <v:SystemInfoPage/>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:HardwareViewModel}">
+                <v:HardwarePage/>
+            </DataTemplate>
 
         </ResourceDictionary>
     </Application.Resources>

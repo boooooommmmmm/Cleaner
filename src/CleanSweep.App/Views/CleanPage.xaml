@@ -10,6 +10,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -21,7 +22,7 @@
         </StackPanel>
 
         <!-- 工具栏 -->
-        <Grid Grid.Row="1" Margin="0,18,0,12">
+        <Grid Grid.Row="1" Margin="0,18,0,0">
             <StackPanel Orientation="Horizontal">
                 <Button Content="开始扫描" Style="{StaticResource Button.Primary}" Command="{Binding ScanCommand}" MinWidth="110"
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
@@ -36,14 +37,33 @@
             <TextBlock Text="{Binding SelectedText}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
         </Grid>
 
+        <!-- 筛选与风险分布：有结果时才显示 -->
+        <Grid Grid.Row="2" Margin="0,8,0,12" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="260"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Grid.Column="0">
+                <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" VerticalContentAlignment="Center" AutomationProperties.Name="筛选结果"/>
+                <TextBlock Text="按名称或路径筛选…" Style="{StaticResource Text.Secondary}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                           Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}, ConverterParameter=invert}"/>
+            </Grid>
+            <Button Grid.Column="1" Content="清除" Style="{StaticResource Button.Link}" Command="{Binding ClearFilterCommand}" Margin="4,0,0,0"
+                    Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}}"/>
+            <TextBlock Grid.Column="2" Text="{Binding RiskSummary}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Right" VerticalAlignment="Center"
+                       ToolTip="默认只勾选“安全”级项目；“建议确认”与“高风险”需要你逐项查看说明后再勾选"/>
+        </Grid>
+
         <!-- 结果 -->
-        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
+        <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
             <Grid>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="0,4">
                     <ItemsControl ItemsSource="{Binding Groups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:ScanGroupViewModel}">
-                                <Expander IsExpanded="{Binding IsExpanded}" Margin="8,2" BorderThickness="0">
+                                <Expander IsExpanded="{Binding IsExpanded}" Margin="8,2" BorderThickness="0"
+                                          Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
                                     <Expander.Header>
                                         <Grid Width="{Binding ActualWidth, RelativeSource={RelativeSource AncestorType=Expander}}" Margin="0,0,40,0">
                                             <Grid.ColumnDefinitions>
@@ -62,7 +82,8 @@
                                     <ItemsControl ItemsSource="{Binding Items}" Margin="28,4,8,8">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate DataType="{x:Type vm:ScanItemViewModel}">
-                                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8">
+                                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8"
+                                                        Visibility="{Binding IsVisible, Converter={StaticResource BoolToVis}}">
                                                     <Grid>
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="Auto"/>
@@ -70,8 +91,10 @@
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                             <ColumnDefinition Width="Auto"/>
+                                                            <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Top" Margin="0,2,10,0">
+                                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Top" Margin="0,2,10,0"
+                                                                  AutomationProperties.Name="{Binding Name}">
                                                             <CheckBox.IsEnabled>
                                                                 <MultiBinding Converter="{StaticResource AllTrue}">
                                                                     <Binding Path="CanSelect"/>
@@ -90,14 +113,54 @@
                                                             </StackPanel>
                                                             <TextBlock Text="{Binding Description}" Style="{StaticResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"
                                                                        Visibility="{Binding HasDescription, Converter={StaticResource BoolToVis}}"/>
-                                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Secondary}" Margin="0,1,0,0"/>
+                                                            <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Secondary}" Margin="0,1,0,0" ToolTip="{Binding Detail}"/>
+
+                                                            <!-- 详情：依据 / 影响 / 恢复方式 / 执行前核对 -->
+                                                            <Border Background="{StaticResource Brush.Background}" CornerRadius="6" Padding="10,8" Margin="0,6,0,2"
+                                                                    Visibility="{Binding IsDetailOpen, Converter={StaticResource BoolToVis}}">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="Auto"/>
+                                                                        <ColumnDefinition Width="*"/>
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <Grid.RowDefinitions>
+                                                                        <RowDefinition/>
+                                                                        <RowDefinition/>
+                                                                        <RowDefinition/>
+                                                                        <RowDefinition/>
+                                                                    </Grid.RowDefinitions>
+                                                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="依据" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" Margin="0,0,10,2"/>
+                                                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Basis}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="影响" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" Margin="0,0,10,2"/>
+                                                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Effect}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="恢复" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" Margin="0,0,10,2"/>
+                                                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Recovery}" FontSize="12" TextWrapping="Wrap" Margin="0,0,0,2"/>
+                                                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="核对" Style="{StaticResource Text.Secondary}" FontWeight="SemiBold" Margin="0,0,10,0"
+                                                                               Visibility="{Binding Preconditions, Converter={StaticResource NullToVis}}"/>
+                                                                    <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding Preconditions}" FontSize="12" TextWrapping="Wrap"
+                                                                               Visibility="{Binding Preconditions, Converter={StaticResource NullToVis}}"/>
+                                                                </Grid>
+                                                            </Border>
                                                         </StackPanel>
-                                                        <Button Grid.Column="2" Content="打开位置" Style="{StaticResource Button.Link}" Command="{Binding OpenLocationCommand}"
+                                                        <Button Grid.Column="2" Command="{Binding ToggleDetailCommand}" VerticalAlignment="Top"
+                                                                AutomationProperties.Name="{Binding Name, StringFormat=详情 {0}}">
+                                                            <Button.Style>
+                                                                <Style TargetType="Button" BasedOn="{StaticResource Button.Link}">
+                                                                    <Setter Property="Content" Value="详情"/>
+                                                                    <Style.Triggers>
+                                                                        <DataTrigger Binding="{Binding IsDetailOpen}" Value="True">
+                                                                            <Setter Property="Content" Value="收起"/>
+                                                                        </DataTrigger>
+                                                                    </Style.Triggers>
+                                                                </Style>
+                                                            </Button.Style>
+                                                        </Button>
+                                                        <Button Grid.Column="3" Content="打开位置" Style="{StaticResource Button.Link}" Command="{Binding OpenLocationCommand}"
                                                                 Visibility="{Binding CanOpenLocation, Converter={StaticResource BoolToVis}}" VerticalAlignment="Top"/>
-                                                        <Button Grid.Column="3" Content="忽略" Style="{StaticResource Button.Link}" VerticalAlignment="Top"
+                                                        <Button Grid.Column="4" Content="忽略" Style="{StaticResource Button.Link}" VerticalAlignment="Top"
                                                                 Command="{Binding DataContext.IgnoreItemCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                                 CommandParameter="{Binding}"/>
-                                                        <TextBlock Grid.Column="4" Text="{Binding SizeText}" FontWeight="SemiBold" MinWidth="80" TextAlignment="Right" VerticalAlignment="Top" Margin="8,2,0,0"/>
+                                                        <TextBlock Grid.Column="5" Text="{Binding SizeText}" FontWeight="SemiBold" MinWidth="80" TextAlignment="Right" VerticalAlignment="Top" Margin="8,2,0,0"/>
                                                     </Grid>
                                                 </Border>
                                             </DataTemplate>
@@ -119,7 +182,7 @@
         </Border>
 
         <!-- 状态栏 -->
-        <StackPanel Grid.Row="3" Margin="0,10,0,0">
+        <StackPanel Grid.Row="4" Margin="0,10,0,0">
             <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent"
                          Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,6"/>
             <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}"

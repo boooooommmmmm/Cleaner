@@ -56,6 +56,9 @@ public sealed class AppSettings
     /// <summary>侧栏分组的展开状态（分组名 → 是否展开）；没记录的分组用默认值。</summary>
     public Dictionary<string, bool> NavGroupExpanded { get; set; } = new();
 
+    /// <summary>硬件状态页"自动刷新"开关。</summary>
+    public bool HardwareAutoRefresh { get; set; }
+
     public static AppSettings Load(string file)
     {
         AppSettings s = new();

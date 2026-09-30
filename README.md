@@ -14,11 +14,12 @@
 | 开机加速（注册表 Run、启动文件夹、计划任务、服务、商店应用；签名、启动影响、建议；禁用 / 延迟启动 / 删除；开机时间历史） | 可用 |
 | 空间分析（TreeMap、目录占比、最大文件） | 可用 |
 | 重复文件查找（大小分组 → 首尾哈希 → 全量哈希，排除硬链接与云端占位文件） | 可用 |
-| 隔离区（30 天可恢复，体积上限，同卷零拷贝） | 可用 |
+| 隔离区（30 天可恢复，体积上限，同卷零拷贝；按磁盘概览卡、按盘 / 批次 / 关键字筛选、释放单个磁盘） | 可用 |
 | 注册表自动备份（修改前导出 .reg，可查看、一键还原，自动淘汰） | 可用 |
 | 系统还原点（修改服务前创建，失败时降级并提示） | 可用 |
 | Path Guard 引擎护栏（重解析点、保护路径、规则路径校验） | 可用 |
 | 白名单、操作日志（可导出 CSV）、半完成批次识别 | 可用 |
+| 清理结果页：每项可展开“依据 / 影响 / 恢复方式 / 执行前核对”说明，按名称或路径筛选，风险分布统计 | 可用 |
 | 已安装软件清单（注册表、应用商店、便携软件、运行进程）与应用指纹库（69 条） | 可用 |
 | 用户目录残留清理（按应用聚合；确认 / 疑似 / 未知三级；多用户与已删除账户；卸载记录定向扫描） | 可用 |
 | 开发者缓存（Gradle / Maven / NuGet / npm / pip / Docker 等只清缓存；闲置 node_modules；conda 环境） | 可用 |
@@ -35,6 +36,7 @@
 | 弹窗拦截（不注入不钩子，窗口枚举 + 规则关闭；IFEO 阻止规则内进程） | 可用，默认关闭 |
 | 系统修复（sfc、DISM、wsreset、重启资源管理器、默认应用、hosts 编辑与备份） | 可用 |
 | 系统信息面板 | 可用 |
+| 硬件状态（CPU 占用、内存、ACPI 温区、NVIDIA 显卡占用 / 温度 / 显存 / 风扇、磁盘 S.M.A.R.T.、电池、上次内存诊断结果；可自动刷新）与系统自带工具入口（内存诊断、资源监视器、可靠性历史、事件查看器、设备管理器等） | 可用，只读、不装驱动 |
 | 规则库（74 条）/ 指纹库 / 弹窗规则签名校验与在线更新（ECDSA P-256 签名清单，只加载清单内哈希一致的文件；https 更新渠道，版本只升不降） | 可用（正式密钥 release-2026-09） |
 | 程序自更新（GitHub Release；安装目录里的程序复验签名后事务式替换，失败自动还原；默认来源官方仓库，GitHub 直连失败自动改用镜像） | 可用，0.15.0 → 0.16.0 已在本机真实跑通；管理员 / 提权服务场景待虚拟机验证 |
 | 文件恢复、软件搬家、桌面整理 | 不做（原因见设计文档 v0.12 变更记录） |
@@ -84,8 +86,8 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.16.2"; git push
-# 在 GitHub 创建 tag v0.16.2 的 Release，上传 publish/CleanSweep-win-x64-0.16.2.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.17.0"; git push
+# 在 GitHub 创建 tag v0.17.0 的 Release，上传 publish/CleanSweep-win-x64-0.17.0.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。
@@ -112,7 +114,7 @@ src/CleanSweep.Core/      核心引擎（无 UI 依赖）
   Drivers/                  pnputil 驱动包解析与旧版本删除、Windows 更新暂停 / 卸载
   Popup/                    弹窗拦截（窗口枚举 + 规则、IFEO 阻止）
   Repair/                   系统修复固定操作表、hosts 管理
-  SysInfo/                  系统信息面板
+  SysInfo/                  系统信息面板、硬件状态采样、系统工具入口表
   Modules/                  回收站、空间分析、重复文件
   Storage/                  SQLite（隔离区索引、操作日志、注册表备份索引、卸载历史）
   Settings/Whitelist.cs     白名单
@@ -143,6 +145,7 @@ docs/                     产品设计文档与审查报告
 - 磁盘健康页的分析、优化、修剪、碎片整理与计划检查磁盘都需要管理员身份；普通权限运行时点击会提示以管理员身份重新启动（defrag.exe 在普通权限下什么都不做，只打印权限不足）。
 - 启动影响来自 `%LocalAppData%\Microsoft\Windows\StartupInfo`，与任务管理器同源；系统没有这些记录时显示“未测量”。
 - 微软自带的服务与计划任务默认隐藏，勾选“显示微软项”后可见；Shell 扩展与浏览器助手对象尚未纳入。
+- 硬件状态页只用 Windows 公开接口：CPU 核心温度与机箱风扇转速需要读 SMBus / EC 的内核驱动，本程序不安装驱动，因此不显示；ACPI 温区在不少台式机主板上不提供；磁盘 S.M.A.R.T. 预警普通权限下读不到；显卡占用 / 温度只在 NVIDIA 驱动自带 nvidia-smi 时显示。
 
 ## 安全设计要点
 
