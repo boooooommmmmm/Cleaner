@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "generic-hot-news",
+      "title": "热点资讯类弹窗",
+      "processPattern": "^(?!.*(chrome|msedge|firefox|explorer|code|devenv)).*(tips|popup|popwnd|news|hot|toast|notif|push|ad|msg)[^\\\\]*\\.exe$",
+      "titlePattern": "(热点|资讯|今日|头条|优惠|推荐|弹窗|广告|领取|抽奖|红包|限时|活动|特惠)",
+      "note": "进程名带 tips / popup / news / toast 等特征，且标题含营销词。只关窗口，不结束进程。"
+    },
+    {
+      "id": "generic-ad-window-class",
+      "title": "广告窗口类名",
+      "processPattern": "^(?!.*(chrome|msedge|firefox|explorer|code|devenv)).*\\.exe$",
+      "classPattern": "(AdWnd|AdvertWnd|PopupAdWnd|TipsWnd|NewsPopup|HotNewsWnd|PushWnd)",
+      "note": "窗口类名直接暴露广告用途的弹窗。"
+    }
+  ],
+  "blockableProcesses": [
+    "HotNewsPopup.exe",
+    "AdPopup.exe",
+    "TipsPopup.exe",
+    "NewsPush.exe"
+  ]
+}

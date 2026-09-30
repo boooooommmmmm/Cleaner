@@ -1,0 +1,41 @@
+{
+  "CheckedAt": "2026-09-30T09:41:31.9402555+08:00",
+  "Commit": "1c30a9b13de35081cc28e42af7483869033e8c9e",
+  "InitialFiles": 179,
+  "FinalSnapshotFiles": 183,
+  "CurrentFiles": 182,
+  "ChangedDuringReview": [
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Service\\CleanSweep.Service.csproj",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SettingsPage.xaml",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\ShellViewModel.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\SettingsViewModel.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Storage\\AppPaths.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Services\\AppSettings.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Services\\AppServices.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\MainWindow.xaml",
+    "D:\\workspace\\Repo\\360Soft\\tools\\CleanSweep.SignData\\Program.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\CleanSweep.App.csproj",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\App.xaml.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\app.manifest"
+  ],
+  "AddedDuringReview": [
+    "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\AppUpdateTests.cs",
+    "D:\\workspace\\Repo\\360Soft\\tools\\release.ps1",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\ReleaseManifest.cs",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\AppUpdater.cs"
+  ],
+  "ChangedAfterFinalSnapshot": [
+    "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ReleaseWorkTests.cs",
+    "D:\\workspace\\Repo\\360Soft\\tools\\sign-data.ps1",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\SettingsViewModel.cs",
+    "D:\\workspace\\Repo\\360Soft\\tools\\keys\\dev-signing-key.pem",
+    "D:\\workspace\\Repo\\360Soft\\tools\\CleanSweep.SignData\\Program.cs",
+    "D:\\workspace\\Repo\\360Soft\\tools\\release.ps1",
+    "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\TrustedKeys.cs"
+  ],
+  "FinalSnapshotStable": false,
+  "WorkingCheckedAt": "2026-09-30T09:44:20.3558004+08:00",
+  "WorkingSnapshotFiles": 182,
+  "ChangedAfterWorkingSnapshot": [],
+  "WorkingSnapshotStable": true
+}

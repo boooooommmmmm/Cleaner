@@ -1,0 +1,84 @@
+<UserControl x:Class="CleanSweep.App.Views.QuarantinePage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:QuarantineViewModel}">
+    <Grid Margin="28,24,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="隔离区" Style="{StaticResource Text.Title}"/>
+            <TextBlock Text="所有被清理的文件都先移到这里，到期后自动删除。发现误删可随时恢复到原位置。" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="0,18,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="刷新" Command="{Binding RefreshCommand}"/>
+                <Button Content="全部恢复" Command="{Binding RestoreAllCommand}" Margin="8,0,0,0"/>
+                <Button Content="删除过期项" Command="{Binding PurgeExpiredCommand}" Margin="8,0,0,0"/>
+                <Button Content="清空隔离区" Style="{StaticResource Button.Danger}" Command="{Binding PurgeAllCommand}" Margin="8,0,0,0"/>
+            </StackPanel>
+            <TextBlock Text="{Binding Summary}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
+            <Grid>
+                <ListView ItemsSource="{Binding Rows}" BorderThickness="0" SelectionMode="Single">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="名称" Width="220">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:QuarantineRow}">
+                                        <TextBlock Text="{Binding Name}" ToolTip="{Binding OriginalPath}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="原位置" Width="360">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:QuarantineRow}">
+                                        <TextBlock Text="{Binding OriginalPath}" ToolTip="{Binding OriginalPath}" Style="{StaticResource Text.Secondary}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="类型" Width="50" DisplayMemberBinding="{Binding KindText}"/>
+                            <GridViewColumn Header="大小" Width="90" DisplayMemberBinding="{Binding SizeText}"/>
+                            <GridViewColumn Header="来源" Width="150" DisplayMemberBinding="{Binding Source}"/>
+                            <GridViewColumn Header="隔离时间" Width="130" DisplayMemberBinding="{Binding QuarantinedText}"/>
+                            <GridViewColumn Header="到期" Width="130" DisplayMemberBinding="{Binding ExpiresText}"/>
+                            <GridViewColumn Header="操作" Width="150">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:QuarantineRow}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="恢复" Style="{StaticResource Button.Link}"
+                                                    Command="{Binding DataContext.RestoreCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="永久删除" Style="{StaticResource Button.Link}" Foreground="{StaticResource Brush.Danger}"
+                                                    Command="{Binding DataContext.PurgeCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Visibility="{Binding Rows.Count, Converter={StaticResource CountToVis}, ConverterParameter=invert}">
+                    <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource Brush.TextSecondary}"/>
+                    <TextBlock Text="隔离区为空" Style="{StaticResource Text.Subtitle}" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <TextBlock Grid.Row="3" Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,10,0,0"/>
+    </Grid>
+</UserControl>

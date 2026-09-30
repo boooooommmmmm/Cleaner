@@ -1,0 +1,127 @@
+<UserControl x:Class="CleanSweep.App.Views.DiskPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:DiskViewModel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,20" MaxWidth="1100" HorizontalAlignment="Left">
+            <Grid>
+                <StackPanel>
+                    <TextBlock Text="磁盘健康" Style="{StaticResource Text.Title}"/>
+                    <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                               Text="介质识别、S.M.A.R.T. 健康、系统优化计划状态。手动优化调用系统的 defrag.exe；固态盘绝不做碎片整理。"/>
+                </StackPanel>
+                <Button Content="刷新" Command="{Binding RefreshCommand}" HorizontalAlignment="Right" VerticalAlignment="Top" MinWidth="90"/>
+            </Grid>
+
+            <Border Style="{StaticResource Card}" Margin="0,18,0,12">
+                <StackPanel>
+                    <TextBlock Text="物理磁盘" FontWeight="SemiBold" FontSize="15"/>
+                    <ItemsControl ItemsSource="{Binding Disks}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:DiskRow}">
+                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8">
+                                    <StackPanel>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13"/>
+                                            <TextBlock Text="{Binding MediaText}" Style="{StaticResource Text.Secondary}" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Bus}" Style="{StaticResource Text.Secondary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding SizeText}" Style="{StaticResource Text.Secondary}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            <TextBlock Text="{Binding Health}" FontWeight="SemiBold" Margin="12,0,0,0" VerticalAlignment="Center">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="{StaticResource Brush.Risk.Safe}"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsWarning}" Value="True">
+                                                                <Setter Property="Foreground" Value="{StaticResource Brush.Risk.High}"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <TextBlock Text="{Binding SmartText}" Style="{StaticResource Text.Secondary}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="卷与优化" FontWeight="SemiBold" FontSize="15"/>
+                    <TextBlock Text="{Binding ScheduleText}" Style="{StaticResource Text.Secondary}" Margin="0,6,0,4" TextWrapping="Wrap"/>
+                    <ItemsControl ItemsSource="{Binding Volumes}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:VolumeRow}">
+                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="260"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Grid.Column="0">
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Letter}" FontWeight="SemiBold" FontSize="14"/>
+                                                <TextBlock Text="{Binding Label}" Margin="8,0,0,0" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <TextBlock Style="{StaticResource Text.Secondary}">
+                                                <Run Text="{Binding FileSystem, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding MediaText, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="12,0">
+                                            <ProgressBar Value="{Binding UsedPercent, Mode=OneWay}" Maximum="100" Height="8" BorderThickness="0"/>
+                                            <TextBlock Text="{Binding SizeText}" Style="{StaticResource Text.Secondary}" Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Content="分析" Style="{StaticResource Button.Link}" Visibility="{Binding IsFixed, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Analyze"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                            </Button>
+                                            <Button Content="优化" Style="{StaticResource Button.Link}" Visibility="{Binding IsFixed, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Optimize"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                            </Button>
+                                            <Button Content="重新修剪" Style="{StaticResource Button.Link}" Visibility="{Binding CanRetrim, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Retrim"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                            </Button>
+                                            <Button Content="碎片整理" Style="{StaticResource Button.Link}" Visibility="{Binding CanDefragment, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Defragment"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                            </Button>
+                                            <Button Content="计划检查磁盘" Style="{StaticResource Button.Link}" Visibility="{Binding IsNtfs, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|ScheduleCheckDisk"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding Output, Converter={StaticResource NullToVis}}">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="命令输出" FontWeight="SemiBold" FontSize="15"/>
+                        <Button Content="取消等待" Command="{Binding RunCancelCommand}" HorizontalAlignment="Right" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+                    </Grid>
+                    <TextBox Text="{Binding Output, Mode=OneWay}" IsReadOnly="True" FontFamily="Consolas" FontSize="12" TextWrapping="Wrap" MaxHeight="260" Margin="0,8,0,0"
+                             VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent"/>
+                </StackPanel>
+            </Border>
+
+            <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent" Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+            <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,6,0,0" TextWrapping="Wrap"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

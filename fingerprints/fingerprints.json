@@ -1,0 +1,339 @@
+{
+  "version": 1,
+  "fingerprints": [
+    {
+      "id": "gradle", "app": "Gradle", "publisher": "Gradle Inc.",
+      "paths": ["%UserProfile%\\.gradle"],
+      "detect": { "anyOf": [ { "command": "gradle" }, { "installedName": "Android Studio" }, { "installedName": "IntelliJ IDEA" }, { "directory": "%LocalAppData%\\Programs\\Android Studio" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.gradle\\caches", "%UserProfile%\\.gradle\\daemon", "%UserProfile%\\.gradle\\wrapper\\dists", "%UserProfile%\\.gradle\\native"],
+      "note": "Gradle 用户目录。caches / daemon / wrapper 可在保留配置的前提下清理。"
+    },
+    {
+      "id": "maven", "app": "Apache Maven", "publisher": "Apache",
+      "paths": ["%UserProfile%\\.m2"],
+      "detect": { "anyOf": [ { "command": "mvn" }, { "installedName": "IntelliJ IDEA" }, { "installedName": "Eclipse" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.m2\\repository"],
+      "note": "Maven 本地仓库。删除后下次构建重新下载依赖。settings.xml 保留。"
+    },
+    {
+      "id": "nuget", "app": "NuGet", "publisher": "Microsoft",
+      "paths": ["%UserProfile%\\.nuget"],
+      "detect": { "anyOf": [ { "command": "dotnet" }, { "installedPublisher": "Microsoft Visual Studio" }, { "installedName": "Visual Studio" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.nuget\\packages"],
+      "note": "NuGet 全局包缓存。删除后下次还原重新下载。"
+    },
+    {
+      "id": "dotnet-user", "app": ".NET SDK", "publisher": "Microsoft",
+      "paths": ["%UserProfile%\\.dotnet", "%UserProfile%\\.templateengine"],
+      "detect": { "anyOf": [ { "command": "dotnet" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.dotnet\\TelemetryStorageService", "%UserProfile%\\.templateengine\\packages"],
+      "note": ".NET SDK 用户数据：工具、模板缓存、遥测。"
+    },
+    {
+      "id": "android-sdk", "app": "Android SDK", "publisher": "Google",
+      "paths": ["%UserProfile%\\.android", "%LocalAppData%\\Android\\Sdk"],
+      "detect": { "anyOf": [ { "installedName": "Android Studio" }, { "directory": "%LocalAppData%\\Programs\\Android Studio" }, { "command": "adb" } ] },
+      "flags": ["devCache", "programBody"],
+      "cachePaths": ["%UserProfile%\\.android\\cache", "%UserProfile%\\.android\\build-cache"],
+      "note": "Android SDK 与 AVD 镜像体积很大；SDK 目录属于程序本体，删除后需重新下载。"
+    },
+    {
+      "id": "docker-desktop", "app": "Docker Desktop", "publisher": "Docker Inc.",
+      "paths": ["%UserProfile%\\.docker", "%AppData%\\Docker", "%AppData%\\Docker Desktop", "%LocalAppData%\\Docker"],
+      "detect": { "anyOf": [ { "installedName": "Docker Desktop" }, { "command": "docker" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%LocalAppData%\\Docker\\log"],
+      "note": "Docker Desktop 配置与日志。WSL 虚拟磁盘（ext4.vhdx）只显示体积，不删除。"
+    },
+    {
+      "id": "cargo", "app": "Rust (cargo / rustup)", "publisher": "Rust Foundation",
+      "paths": ["%UserProfile%\\.cargo", "%UserProfile%\\.rustup"],
+      "detect": { "anyOf": [ { "command": "cargo" }, { "command": "rustup" } ] },
+      "flags": ["devCache", "programBody"],
+      "cachePaths": ["%UserProfile%\\.cargo\\registry\\cache", "%UserProfile%\\.cargo\\registry\\src", "%UserProfile%\\.cargo\\git\\checkouts", "%UserProfile%\\.rustup\\downloads", "%UserProfile%\\.rustup\\tmp"],
+      "note": ".cargo/bin 与 .rustup/toolchains 是工具链本体。"
+    },
+    {
+      "id": "go", "app": "Go", "publisher": "Google",
+      "paths": ["%UserProfile%\\go"],
+      "detect": { "anyOf": [ { "command": "go" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\go\\pkg\\mod\\cache"],
+      "note": "GOPATH。pkg\\mod 是模块缓存，bin 与 src 是用户内容。"
+    },
+    {
+      "id": "conda", "app": "Anaconda / Miniconda", "publisher": "Anaconda, Inc.",
+      "paths": ["%UserProfile%\\.conda", "%UserProfile%\\anaconda3", "%UserProfile%\\miniconda3", "%UserProfile%\\.condarc"],
+      "detect": { "anyOf": [ { "command": "conda" }, { "installedName": "Anaconda" }, { "installedName": "Miniconda" } ] },
+      "flags": ["devCache", "programBody"],
+      "cachePaths": ["%UserProfile%\\anaconda3\\pkgs", "%UserProfile%\\miniconda3\\pkgs", "%UserProfile%\\.conda\\pkgs"],
+      "note": "pkgs 是包缓存，envs 是用户环境。"
+    },
+    {
+      "id": "python-user", "app": "Python (用户安装)", "publisher": "Python Software Foundation",
+      "paths": ["%LocalAppData%\\Programs\\Python", "%AppData%\\Python"],
+      "detect": { "anyOf": [ { "installedPublisher": "Python Software Foundation" }, { "command": "python" } ] },
+      "flags": ["programBody"],
+      "note": "%AppData%\\Python 含 pip --user 安装的包。"
+    },
+    {
+      "id": "jupyter", "app": "Jupyter / IPython", "publisher": "Project Jupyter",
+      "paths": ["%UserProfile%\\.ipython", "%UserProfile%\\.jupyter", "%AppData%\\jupyter"],
+      "detect": { "anyOf": [ { "command": "jupyter" }, { "command": "ipython" }, { "command": "conda" } ] },
+      "note": "内含 notebook 检查点与内核配置。"
+    },
+    {
+      "id": "npm-user", "app": "npm / Node.js", "publisher": "OpenJS Foundation",
+      "paths": ["%AppData%\\npm", "%UserProfile%\\.npm", "%UserProfile%\\.npmrc"],
+      "detect": { "anyOf": [ { "command": "npm" }, { "command": "node" }, { "installedName": "Node.js" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.npm\\_cacache", "%UserProfile%\\.npm\\_logs"],
+      "note": "%AppData%\\npm 是全局安装的包。"
+    },
+    {
+      "id": "pnpm", "app": "pnpm", "publisher": "pnpm",
+      "paths": ["%LocalAppData%\\pnpm"],
+      "detect": { "anyOf": [ { "command": "pnpm" } ] },
+      "flags": ["devCache", "programBody"],
+      "cachePaths": ["%LocalAppData%\\pnpm\\store"],
+      "note": "store 是内容寻址仓库，删除后项目需重新安装依赖。"
+    },
+    {
+      "id": "cypress", "app": "Cypress", "publisher": "Cypress.io",
+      "paths": ["%LocalAppData%\\Cypress"],
+      "detect": { "anyOf": [ { "command": "npm" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%LocalAppData%\\Cypress\\Cache"],
+      "note": "Cypress 二进制缓存，每个版本数百 MB。"
+    },
+    {
+      "id": "playwright", "app": "Playwright", "publisher": "Microsoft",
+      "paths": ["%LocalAppData%\\ms-playwright"],
+      "detect": { "anyOf": [ { "command": "npm" }, { "command": "dotnet" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%LocalAppData%\\ms-playwright"],
+      "note": "Playwright 浏览器二进制，运行 playwright install 可重新下载。"
+    },
+    {
+      "id": "puppeteer", "app": "Puppeteer", "publisher": "Google",
+      "paths": ["%UserProfile%\\.cache\\puppeteer"],
+      "detect": { "anyOf": [ { "command": "npm" } ] },
+      "flags": ["devCache"],
+      "cachePaths": ["%UserProfile%\\.cache\\puppeteer"],
+      "note": "Puppeteer 下载的 Chromium。"
+    },
+    {
+      "id": "vscode-user", "app": "Visual Studio Code", "publisher": "Microsoft",
+      "paths": ["%UserProfile%\\.vscode", "%UserProfile%\\.vscode-insiders", "%AppData%\\Code - Insiders"],
+      "detect": { "anyOf": [ { "file": "%LocalAppData%\\Programs\\Microsoft VS Code\\Code.exe" }, { "file": "%ProgramFiles%\\Microsoft VS Code\\Code.exe" }, { "installedName": "Microsoft Visual Studio Code" }, { "file": "%LocalAppData%\\Programs\\Microsoft VS Code Insiders\\Code - Insiders.exe" } ] },
+      "note": "扩展目录。VS Code 主配置由规则库 microsoft.vscode 处理。"
+    },
+    {
+      "id": "jetbrains", "app": "JetBrains IDE", "publisher": "JetBrains",
+      "paths": ["%AppData%\\JetBrains", "%LocalAppData%\\JetBrains"],
+      "detect": { "anyOf": [ { "installedPublisher": "JetBrains" }, { "directory": "%LocalAppData%\\Programs\\IntelliJ IDEA" }, { "registry": "HKCU\\Software\\JetBrains" } ] },
+      "flags": ["license", "devCache"],
+      "cachePaths": ["%LocalAppData%\\JetBrains"],
+      "note": "%AppData%\\JetBrains 含 IDE 配置、密钥与许可证；%LocalAppData%\\JetBrains 是索引缓存，可在保留配置的前提下清理。"
+    },
+    {
+      "id": "adobe", "app": "Adobe Creative Cloud", "publisher": "Adobe",
+      "paths": ["%AppData%\\Adobe", "%LocalAppData%\\Adobe"],
+      "detect": { "anyOf": [ { "installedPublisher": "Adobe" }, { "directory": "%ProgramFiles%\\Adobe" }, { "directory": "%ProgramFilesX86%\\Adobe" } ] },
+      "flags": ["license"],
+      "note": "含 Creative Cloud 登录与许可证缓存；重装后需重新登录。"
+    },
+    {
+      "id": "autodesk", "app": "Autodesk", "publisher": "Autodesk",
+      "paths": ["%AppData%\\Autodesk", "%LocalAppData%\\Autodesk"],
+      "detect": { "anyOf": [ { "installedPublisher": "Autodesk" }, { "directory": "%ProgramFiles%\\Autodesk" } ] },
+      "flags": ["license"],
+      "note": "含许可证与自定义配置。"
+    },
+    {
+      "id": "unity", "app": "Unity", "publisher": "Unity Technologies",
+      "paths": ["%AppData%\\Unity", "%LocalAppData%\\Unity", "%AppData%\\UnityHub", "%LocalAppData%\\UnityHub"],
+      "detect": { "anyOf": [ { "installedName": "Unity Hub" }, { "installedPublisher": "Unity Technologies" } ] },
+      "flags": ["license", "devCache"],
+      "cachePaths": ["%LocalAppData%\\Unity\\cache"],
+      "note": "%AppData%\\Unity 含许可证文件。"
+    },
+    {
+      "id": "epic-games", "app": "Epic Games Launcher", "publisher": "Epic Games",
+      "paths": ["%LocalAppData%\\EpicGamesLauncher", "%LocalAppData%\\UnrealEngine", "%LocalAppData%\\UnrealEngineLauncher"],
+      "detect": { "anyOf": [ { "installedName": "Epic Games Launcher" }, { "directory": "%ProgramFilesX86%\\Epic Games\\Launcher" } ] },
+      "flags": ["gameSaves"],
+      "note": "部分游戏把存档放在 %LocalAppData% 的对应目录下。"
+    },
+    {
+      "id": "zoom", "app": "Zoom", "publisher": "Zoom Video Communications",
+      "paths": ["%AppData%\\Zoom"],
+      "detect": { "anyOf": [ { "installedName": "Zoom" }, { "file": "%AppData%\\Zoom\\bin\\Zoom.exe" } ] },
+      "flags": ["loginState"],
+      "note": "Zoom 用户级安装的程序本体也在这里。"
+    },
+    {
+      "id": "wechat", "app": "微信", "publisher": "Tencent",
+      "paths": ["%AppData%\\Tencent\\WeChat", "%AppData%\\Tencent\\xwechat", "%UserProfile%\\Documents\\WeChat Files", "%UserProfile%\\Documents\\xwechat_files"],
+      "detect": { "anyOf": [ { "installedName": "微信" }, { "installedName": "WeChat" }, { "registry": "HKCU\\Software\\Tencent\\WeChat" }, { "installedName": "Weixin" } ] },
+      "flags": ["loginState"],
+      "note": "Documents 下的 WeChat Files 是聊天记录与接收的文件，删除不可恢复（隔离期外）。"
+    },
+    {
+      "id": "qq", "app": "QQ", "publisher": "Tencent",
+      "paths": ["%AppData%\\Tencent\\QQ", "%UserProfile%\\Documents\\Tencent Files", "%AppData%\\Tencent\\QQNT"],
+      "detect": { "anyOf": [ { "installedName": "QQ" }, { "registry": "HKCU\\Software\\Tencent\\QQ" }, { "registry": "HKCU\\Software\\Tencent\\QQNT" } ] },
+      "flags": ["loginState"],
+      "note": "Documents 下的 Tencent Files 是聊天记录与接收的文件。"
+    },
+    {
+      "id": "dingtalk", "app": "钉钉", "publisher": "Alibaba",
+      "paths": ["%AppData%\\DingTalk", "%LocalAppData%\\DingTalk"],
+      "detect": { "anyOf": [ { "installedName": "钉钉" }, { "installedName": "DingTalk" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "feishu", "app": "飞书 / Lark", "publisher": "ByteDance",
+      "paths": ["%AppData%\\Feishu", "%AppData%\\LarkShell", "%LocalAppData%\\Feishu", "%LocalAppData%\\LarkShell"],
+      "detect": { "anyOf": [ { "installedName": "飞书" }, { "installedName": "Feishu" }, { "installedName": "Lark" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "telegram", "app": "Telegram Desktop", "publisher": "Telegram FZ-LLC",
+      "paths": ["%AppData%\\Telegram Desktop"],
+      "detect": { "anyOf": [ { "installedName": "Telegram Desktop" }, { "packageFamily": "TelegramMessengerLLP.TelegramDesktop_t4vj0pshhgkwm" }, { "file": "%AppData%\\Telegram Desktop\\Telegram.exe" } ] },
+      "flags": ["loginState"],
+      "note": "tdata 含登录会话与本地缓存。"
+    },
+    {
+      "id": "slack", "app": "Slack", "publisher": "Slack Technologies",
+      "paths": ["%AppData%\\Slack", "%LocalAppData%\\slack"],
+      "detect": { "anyOf": [ { "installedName": "Slack" }, { "packageFamily": "91750D7E.Slack_8she8kybcnzg4" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "notion", "app": "Notion", "publisher": "Notion Labs",
+      "paths": ["%AppData%\\Notion", "%LocalAppData%\\Programs\\Notion"],
+      "detect": { "anyOf": [ { "installedName": "Notion" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "obsidian", "app": "Obsidian", "publisher": "Dynalist Inc.",
+      "paths": ["%AppData%\\obsidian", "%LocalAppData%\\Obsidian"],
+      "detect": { "anyOf": [ { "installedName": "Obsidian" } ] },
+      "note": "仓库（笔记本身）在用户选择的位置，此处只有应用状态。"
+    },
+    {
+      "id": "postman", "app": "Postman", "publisher": "Postman Inc.",
+      "paths": ["%AppData%\\Postman", "%LocalAppData%\\Postman"],
+      "detect": { "anyOf": [ { "installedName": "Postman" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "figma", "app": "Figma", "publisher": "Figma Inc.",
+      "paths": ["%AppData%\\Figma", "%LocalAppData%\\Figma"],
+      "detect": { "anyOf": [ { "installedName": "Figma" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "blender", "app": "Blender", "publisher": "Blender Foundation",
+      "paths": ["%AppData%\\Blender Foundation"],
+      "detect": { "anyOf": [ { "installedName": "blender" }, { "installedPublisher": "Blender Foundation" }, { "packageFamily": "BlenderFoundation.Blender_ppwjx1n5r4v9t" } ] },
+      "note": "含各版本的用户偏好、插件与启动文件。"
+    },
+    {
+      "id": "obs-studio", "app": "OBS Studio", "publisher": "OBS Project",
+      "paths": ["%AppData%\\obs-studio"],
+      "detect": { "anyOf": [ { "installedName": "OBS Studio" } ] },
+      "note": "含场景集合与推流设置。"
+    },
+    {
+      "id": "vlc", "app": "VLC media player", "publisher": "VideoLAN",
+      "paths": ["%AppData%\\vlc"],
+      "detect": { "anyOf": [ { "installedName": "VLC media player" }, { "packageFamily": "XPDM1ZW6815MQM_a2tf68pfaqtf6" } ] }
+    },
+    {
+      "id": "gimp", "app": "GIMP", "publisher": "The GIMP Team",
+      "paths": ["%AppData%\\GIMP"],
+      "detect": { "anyOf": [ { "installedName": "GIMP" } ] }
+    },
+    {
+      "id": "audacity", "app": "Audacity", "publisher": "Audacity Team",
+      "paths": ["%AppData%\\audacity"],
+      "detect": { "anyOf": [ { "installedName": "Audacity" } ] }
+    },
+    {
+      "id": "7zip", "app": "7-Zip", "publisher": "Igor Pavlov",
+      "paths": ["%AppData%\\7-Zip"],
+      "detect": { "anyOf": [ { "installedName": "7-Zip" }, { "registry": "HKLM\\Software\\7-Zip" } ] }
+    },
+    {
+      "id": "notepadpp", "app": "Notepad++", "publisher": "Notepad++ Team",
+      "paths": ["%AppData%\\Notepad++"],
+      "detect": { "anyOf": [ { "installedName": "Notepad++" }, { "registry": "HKLM\\Software\\Notepad++" } ] },
+      "note": "含未保存的会话备份（backup 目录）。"
+    },
+    {
+      "id": "sublime", "app": "Sublime Text", "publisher": "Sublime HQ",
+      "paths": ["%AppData%\\Sublime Text", "%AppData%\\Sublime Text 3", "%LocalAppData%\\Sublime Text"],
+      "detect": { "anyOf": [ { "installedName": "Sublime Text" } ] },
+      "flags": ["license"]
+    },
+    {
+      "id": "filezilla", "app": "FileZilla", "publisher": "Tim Kosse",
+      "paths": ["%AppData%\\FileZilla"],
+      "detect": { "anyOf": [ { "installedName": "FileZilla" } ] },
+      "flags": ["loginState"],
+      "note": "sitemanager.xml 含站点密码。"
+    },
+    {
+      "id": "winscp", "app": "WinSCP", "publisher": "Martin Prikryl",
+      "paths": ["%AppData%\\WinSCP"],
+      "detect": { "anyOf": [ { "installedName": "WinSCP" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "thunderbird", "app": "Thunderbird", "publisher": "Mozilla",
+      "paths": ["%AppData%\\Thunderbird", "%LocalAppData%\\Thunderbird"],
+      "detect": { "anyOf": [ { "installedName": "Mozilla Thunderbird" }, { "registry": "HKLM\\Software\\Mozilla\\Mozilla Thunderbird" } ] },
+      "flags": ["loginState"],
+      "note": "邮件本地存储，删除即丢失未同步的邮件。"
+    },
+    {
+      "id": "baidunetdisk", "app": "百度网盘", "publisher": "Baidu",
+      "paths": ["%AppData%\\baidu\\BaiduNetdisk", "%LocalAppData%\\BaiduNetdisk"],
+      "detect": { "anyOf": [ { "installedName": "百度网盘" }, { "installedName": "BaiduNetdisk" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "netease-music", "app": "网易云音乐", "publisher": "NetEase",
+      "paths": ["%LocalAppData%\\Netease\\CloudMusic", "%AppData%\\Netease\\CloudMusic"],
+      "detect": { "anyOf": [ { "installedName": "网易云音乐" }, { "installedName": "CloudMusic" } ] },
+      "flags": ["loginState"]
+    },
+    {
+      "id": "my-games", "app": "游戏存档（Documents\\My Games）", "publisher": null,
+      "paths": ["%UserProfile%\\Documents\\My Games"],
+      "flags": ["gameSaves"],
+      "note": "多款游戏共用的存档目录。只提示，不判定卸载。"
+    },
+    {
+      "id": "larian", "app": "Larian Studios（博德之门 3 / 神界原罪）", "publisher": "Larian Studios",
+      "paths": ["%LocalAppData%\\Larian Studios"],
+      "detect": { "anyOf": [ { "installedName": "Baldur's Gate 3" }, { "installedName": "Divinity" } ] },
+      "flags": ["gameSaves"],
+      "note": "含存档与模组设置。"
+    },
+    {
+      "id": "minecraft", "app": "Minecraft", "publisher": "Mojang",
+      "paths": ["%AppData%\\.minecraft"],
+      "detect": { "anyOf": [ { "installedName": "Minecraft" }, { "packageFamily": "Microsoft.4297127D64EC6_8wekyb3d8bbwe" }, { "installedName": "Minecraft Launcher" } ] },
+      "flags": ["gameSaves"],
+      "note": "saves 目录是世界存档。"
+    }
+  ]
+}

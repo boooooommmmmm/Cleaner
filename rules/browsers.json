@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "google.chrome",
+      "app": "Google Chrome",
+      "publisher": "Google",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Google\\Chrome\\User Data\\Local State" },
+          { "registry": "HKCU\\Software\\Google\\Chrome" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
+        { "path": "%LocalAppData%\\Google\\Chrome", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Chrome 用户数据（含书签、密码、历史），应用已卸载" }
+      ]
+    },
+    {
+      "id": "microsoft.edge",
+      "app": "Microsoft Edge",
+      "publisher": "Microsoft",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Local State" },
+          { "file": "%ProgramFilesX86%\\Microsoft\\Edge\\Application\\msedge.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存" }
+      ]
+    },
+    {
+      "id": "brave.browser",
+      "app": "Brave",
+      "publisher": "Brave Software",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Brave 用户数据，应用已卸载" }
+      ]
+    },
+    {
+      "id": "mozilla.firefox",
+      "app": "Mozilla Firefox",
+      "publisher": "Mozilla",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\Mozilla\\Firefox\\profiles.ini" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Mozilla\\Firefox\\Profiles", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存（所有配置文件的 cache2 / startupCache / thumbnails）" },
+        { "path": "%AppData%\\Mozilla\\Firefox", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Firefox 用户数据（含书签、密码、历史），应用已卸载" }
+      ]
+    }
+  ]
+}

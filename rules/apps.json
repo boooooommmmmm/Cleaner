@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "microsoft.vscode",
+      "app": "Visual Studio Code",
+      "publisher": "Microsoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "registry": "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{771FD6B0-FA20-440A-A002-3B3BAC16DC50}_is1" },
+          { "file": "%LocalAppData%\\Programs\\Microsoft VS Code\\Code.exe" },
+          { "file": "%ProgramFiles%\\Microsoft VS Code\\Code.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Code\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "编辑器缓存" },
+        { "path": "%AppData%\\Code\\CachedData", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "V8 编译缓存" },
+        { "path": "%AppData%\\Code\\CachedExtensionVSIXs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "已下载的扩展安装包" },
+        { "path": "%AppData%\\Code\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Code\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Code\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7 },
+        { "path": "%AppData%\\Code\\User\\workspaceStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "工作区状态缓存，清理后会丢失未保存的编辑器布局" },
+        { "path": "%AppData%\\Code", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "VS Code 用户设置、快捷键与扩展状态，应用已卸载" },
+        { "path": "%UserProfile%\\.vscode", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "VS Code 扩展目录，应用已卸载" }
+      ]
+    },
+    {
+      "id": "valve.steam",
+      "app": "Steam",
+      "publisher": "Valve",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "registry": "HKCU\\Software\\Valve\\Steam" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Steam\\htmlcache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Steam 内置浏览器缓存" },
+        { "path": "%LocalAppData%\\Steam", "kind": "directory", "risk": "confirm", "when": "uninstalled", "description": "Steam 本地缓存，应用已卸载" }
+      ]
+    },
+    {
+      "id": "discord",
+      "app": "Discord",
+      "publisher": "Discord Inc.",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Discord" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\discord\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\discord\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\discord\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\discord", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Discord 用户数据（含登录态），应用已卸载" },
+        { "path": "%LocalAppData%\\Discord", "kind": "directory", "risk": "confirm", "when": "uninstalled", "description": "Discord 程序本体残留，应用已卸载" }
+      ]
+    },
+    {
+      "id": "oracle.java-deployment",
+      "app": "Java 运行时",
+      "publisher": "Oracle",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Sun\\Java\\Deployment\\cache" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Sun\\Java\\Deployment\\cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Java Web Start / Applet 缓存" }
+      ]
+    },
+    {
+      "id": "spotify",
+      "app": "Spotify",
+      "publisher": "Spotify AB",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%AppData%\\Spotify" },
+          { "directory": "%LocalAppData%\\Spotify" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Spotify\\Data", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "音频流缓存，清理后已播放歌曲需重新缓冲" },
+        { "path": "%LocalAppData%\\Spotify\\Browser", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "内置浏览器缓存" },
+        { "path": "%AppData%\\Spotify", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Spotify 用户数据，应用已卸载" },
+        { "path": "%LocalAppData%\\Spotify", "kind": "directory", "risk": "confirm", "when": "uninstalled", "description": "Spotify 缓存，应用已卸载" }
+      ]
+    },
+    {
+      "id": "microsoft.teams-classic",
+      "app": "Microsoft Teams（经典版）",
+      "publisher": "Microsoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Microsoft\\Teams\\current\\Teams.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Microsoft\\Teams\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Microsoft\\Teams\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Microsoft\\Teams\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Microsoft\\Teams", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Teams 经典版用户数据，应用已卸载" }
+      ]
+    }
+  ]
+}

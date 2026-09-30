@@ -1,0 +1,79 @@
+<UserControl x:Class="CleanSweep.App.Views.ShredPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ShredViewModel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,20" MaxWidth="980" HorizontalAlignment="Left">
+            <TextBlock Text="文件粉碎" Style="{StaticResource Text.Title}"/>
+            <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                       Text="多次覆写后删除，防止被恢复软件找回。不经过隔离区，无法撤销。SSD 上覆写不保证擦除，请依赖 BitLocker 加密与 TRIM。"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,18,0,12">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="要粉碎的文件" FontWeight="SemiBold" FontSize="15"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="覆写次数" VerticalAlignment="Center"/>
+                            <TextBox Text="{Binding Passes, UpdateSourceTrigger=LostFocus}" Width="44" Height="30" Margin="8,0,16,0" VerticalContentAlignment="Center" TextAlignment="Right"/>
+                            <Button Content="添加文件…" Command="{Binding AddFilesCommand}"/>
+                            <Button Content="粉碎" Style="{StaticResource Button.Danger}" Command="{Binding ShredCommand}" Margin="8,0,0,0" MinWidth="90"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
+                            <Button Content="取消" Command="{Binding ShredCancelCommand}" Margin="8,0,0,0" MinWidth="90"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding MediaWarning}" Foreground="{StaticResource Brush.Risk.Confirm}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,8,0,0"
+                               Visibility="{Binding MediaWarning, Converter={StaticResource NullToVis}}"/>
+                    <ItemsControl ItemsSource="{Binding Files}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:ShredFileRow}">
+                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,6">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="{Binding Path}" ToolTip="{Binding Result}" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding MediaText}" Style="{StaticResource Text.Secondary}" Margin="12,0" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding SizeText}" MinWidth="70" TextAlignment="Right" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="3" Content="移除" Style="{StaticResource Button.Link}" Margin="8,0,0,0"
+                                                Command="{Binding DataContext.RemoveFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="擦除空闲空间（仅机械盘）" FontWeight="SemiBold" FontSize="15"/>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <ComboBox ItemsSource="{Binding Drives}" SelectedItem="{Binding SelectedDrive}" Width="320" Height="32" VerticalContentAlignment="Center"/>
+                            <Button Content="开始擦除" Style="{StaticResource Button.Danger}" Command="{Binding WipeCommand}" Margin="8,0,0,0" MinWidth="90"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
+                            <Button Content="取消" Command="{Binding WipeCancelCommand}" Margin="8,0,0,0" MinWidth="90"
+                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap"
+                               Text="把卷上的空闲空间写零再释放，覆盖以前删除的文件残留的数据。固态盘与无法判定介质的卷不提供此功能。"/>
+                    <TextBlock Text="{Binding WipeStatus}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                    <TextBlock Text="{Binding WipeProgress}" Style="{StaticResource Text.Secondary}" Visibility="{Binding WipeProgress, Converter={StaticResource NullToVis}}"/>
+                </StackPanel>
+            </Border>
+
+            <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent"
+                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

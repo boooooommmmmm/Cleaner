@@ -1,0 +1,245 @@
+using CleanSweep.Core.Cleaning;
+using CleanSweep.Core.Model;
+using CleanSweep.Core.Modules;
+using CleanSweep.Core.Rules;
+using CleanSweep.Core.Scanning;
+using CleanSweep.Core.Settings;
+using CleanSweep.Core.Storage;
+using Microsoft.Data.Sqlite;
+
+namespace CleanSweep.Core.Tests;
+
+// Temporary audit probes: passing assertions reproduce the current defects.
+public sealed class AuditProbes : IDisposable
+{
+    private readonly TestEnv _t = new();
+    private readonly CleanSweepDb _db = CleanSweepDb.InMemory();
+    private Quarantine Q => new(_db, null, _ => Path.Combine(_t.Root, "Q"));
+    private CleanEngine Engine => new(_t.Guard, Q, new OperationLog(_db), new NullPreActionRunner());
+    public void Dispose() { _db.Dispose(); _t.Dispose(); }
+    private void Sql(string sql, string? path = null)
+    {
+        using var lease = _db.Open();
+        using var cmd = lease.CreateCommand();
+        cmd.CommandText = sql;
+        if (path != null) cmd.Parameters.AddWithValue("$p", path);
+        cmd.ExecuteNonQuery();
+    }
+    private ScanContext Context(string target, Whitelist? wl = null)
+    {
+        var json = "{\"rules\":[{\"id\":\"audit\",\"app\":\"audit\",\"category\":\"system\",\"targets\":[" + target + "]}]}";
+        var loaded = new RuleLoader(_t.Guard).LoadJson(json, "audit.json");
+        Assert.Empty(loaded.Rejected);
+        return new() { Env = _t.Env, Guard = _t.Guard, Whitelist = wl ?? new(), Rules = loaded.Rules };
+    }
+    private Task<IReadOnlyList<ScanItem>> Scan(ScanContext ctx) =>
+        new ScanScheduler().RunAsync(new[] { RuleScanner.SystemJunk() }, ctx, null, default);
+
+    [Fact]
+    public void ForgedExpiredIndex_DeletesProtectedFileOutsideQuarantine()
+    {
+        var entry = Q.MoveIn(_t.File("source.txt"), false, 5, "m", "b", "source");
+        var victim = _t.File(Path.Combine(_t.Vars["Windir"], "System32", "audit.txt"));
+        Assert.False(_t.Guard.Check(victim).Allowed);
+        Sql("UPDATE quarantine_items SET quarantine_path=$p, expires_at='2000-01-01T00:00:00Z'", victim);
+        Assert.Equal(1, Q.PurgeExpired());
+        Assert.False(File.Exists(victim));
+        Assert.True(File.Exists(entry.QuarantinePath));
+    }
+
+    [Fact]
+    public void PurgeFailure_HidesStillExistingFile()
+    {
+        var entry = Q.MoveIn(_t.File("source.txt"), false, 5, "m", "b", "source");
+        using (var locked = new FileStream(entry.QuarantinePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+            Assert.ThrowsAny<IOException>(() => Q.Purge(entry.Id));
+        Assert.True(File.Exists(entry.QuarantinePath));
+        Assert.Empty(Q.ListActive());
+    }
+
+    [Fact]
+    public void InsertFailure_LeavesMovedFileWithoutIndex()
+    {
+        Sql("CREATE TRIGGER fail_insert BEFORE INSERT ON quarantine_items BEGIN SELECT RAISE(ABORT, 'audit failure'); END;");
+        var source = _t.File("source.txt");
+        Assert.Throws<SqliteException>(() => Q.MoveIn(source, false, 5, "m", "b", "source"));
+        Assert.False(File.Exists(source));
+        Assert.Single(Directory.GetFiles(Path.Combine(_t.Root, "Q"), "*", SearchOption.AllDirectories));
+        Assert.Empty(Q.ListActive());
+    }
+
+    [Fact]
+    public void Restore_FollowsReplacedParentJunction()
+    {
+        var source = _t.File(@"data\source.txt");
+        var entry = Q.MoveIn(source, false, 5, "m", "b", "source");
+        var parent = Path.GetDirectoryName(source)!;
+        Directory.Delete(parent);
+        var redirected = _t.Dir(@"Windows\System32\audit");
+        Assert.True(TestEnv.TryCreateJunction(parent, redirected));
+        try
+        {
+            Q.Restore(entry.Id);
+            Assert.True(File.Exists(Path.Combine(redirected, "source.txt")));
+            Assert.False(_t.Guard.Check(Path.Combine(redirected, "source.txt")).Allowed);
+        }
+        finally { Directory.Delete(parent); }
+    }
+
+    [Fact]
+    public void MoveIn_AcceptsPreexistingQuarantineJunction()
+    {
+        var root = Path.Combine(_t.Root, "Q");
+        var redirected = _t.Dir("redirected");
+        Assert.True(TestEnv.TryCreateJunction(root, redirected));
+        try
+        {
+            Q.MoveIn(_t.File("source.txt"), false, 5, "m", "b", "source");
+            Assert.Single(Directory.GetFiles(redirected, "*", SearchOption.AllDirectories));
+        }
+        finally { Directory.Delete(root); }
+    }
+
+    [Fact]
+    public async Task DirectoryTarget_MovesWhitelistedDescendant()
+    {
+        var root = Path.Combine(_t.Vars["LocalAppData"], "Audit");
+        var keep = _t.File(Path.Combine(root, "keep.txt"));
+        var wl = new Whitelist();
+        wl.AddPath(keep);
+        var ctx = Context("""{"path":"%LocalAppData%\\Audit","kind":"directory"}""", wl);
+        var items = await Scan(ctx);
+        Assert.Single(items);
+        var result = await Engine.CleanAsync(items, null, default);
+        Assert.Equal(1, result.DirectoriesQuarantined);
+        Assert.False(File.Exists(keep));
+    }
+
+    [Fact]
+    public async Task DirectoryTarget_MovesProtectedDescendant()
+    {
+        var protectedFile = _t.File(Path.Combine(_t.Vars["AppData"], "Microsoft", "Credentials", "audit.txt"));
+        Assert.False(_t.Guard.Check(protectedFile).Allowed);
+        var ctx = Context("""{"path":"%UserProfile%\\AppData","kind":"directory"}""");
+        var result = await Engine.CleanAsync(await Scan(ctx), null, default);
+        Assert.Equal(1, result.DirectoriesQuarantined);
+        Assert.False(File.Exists(protectedFile));
+    }
+
+    [Fact]
+    public async Task DirectoryTarget_MovesFilesCreatedAfterScan()
+    {
+        var root = Path.Combine(_t.Vars["LocalAppData"], "Audit");
+        _t.File(Path.Combine(root, "old.txt"));
+        var ctx = Context("""{"path":"%LocalAppData%\\Audit","kind":"directory"}""");
+        var items = await Scan(ctx);
+        var added = _t.File(Path.Combine(root, "new-important.txt"));
+        var result = await Engine.CleanAsync(items, null, default);
+        Assert.Equal(1, result.DirectoriesQuarantined);
+        Assert.False(File.Exists(added));
+    }
+
+    [Fact]
+    public void RuleLoader_AcceptsNonCleanupCommandArguments()
+    {
+        var ctx = Context("""{"kind":"command","command":"dism.exe","args":"/Online /Disable-Feature /FeatureName:ExampleFeature /NoRestart","risk":"safe"}""");
+        Assert.Equal(RiskLevel.Safe, ctx.Rules[0].Targets[0].Risk);
+    }
+
+    [Theory]
+    [InlineData("{\"rules\":[null]}")]
+    [InlineData("{\"rules\":[{\"id\":\"x\",\"app\":\"x\",\"category\":null,\"targets\":[{}]}]}")]
+    [InlineData("{\"rules\":[{\"id\":\"x\",\"app\":\"x\",\"targets\":[null]}]}")]
+    public void RuleLoader_ValidJsonNullsCrashInsteadOfRejecting(string json)
+    {
+        Assert.Throws<NullReferenceException>(() => new RuleLoader(_t.Guard).LoadJson(json, "audit.json"));
+    }
+
+    [Fact]
+    public async Task FileTarget_IgnoresMinAgeDays()
+    {
+        var recent = _t.File(Path.Combine(_t.Vars["Temp"], "recent.tmp"));
+        var ctx = Context("""{"path":"%Temp%\\recent.tmp","minAgeDays":30}""");
+        var item = Assert.Single(await Scan(ctx));
+        Assert.Equal(recent, Assert.Single(item.Files).Path);
+    }
+
+    [Fact]
+    public async Task SpaceAnalyzer_FollowsRootJunction()
+    {
+        var target = _t.Dir("target");
+        _t.File(Path.Combine(target, "secret.txt"));
+        var link = Path.Combine(_t.Root, "link");
+        Assert.True(TestEnv.TryCreateJunction(link, target));
+        try
+        {
+            var report = await new SpaceAnalyzer(_t.Guard).AnalyzeAsync(link, 10, null, default);
+            Assert.Equal(1, report.TotalFiles);
+        }
+        finally { Directory.Delete(link); }
+    }
+
+    [Fact]
+    public async Task WhitelistAddedAfterScan_IsIgnoredByCleanup()
+    {
+        var source = _t.File(Path.Combine(_t.Vars["Temp"], "source.txt"));
+        var wl = new Whitelist();
+        var ctx = Context("""{"path":"%Temp%"}""", wl);
+        var items = await Scan(ctx);
+        wl.AddPath(_t.Vars["Temp"]);
+        Assert.True(wl.IsPathExcluded(source));
+        var result = await Engine.CleanAsync(items, null, default);
+        Assert.Equal(1, result.FilesQuarantined);
+        Assert.False(File.Exists(source));
+    }
+
+    [Fact]
+    public void UncommittedBatch_RollbackLeavesOrphanedFiles()
+    {
+        var dbPath = Path.Combine(_t.Root, "audit.db");
+        var source = _t.File("source.txt");
+        QuarantineEntry entry;
+        using (var db = new CleanSweepDb(dbPath))
+        {
+            db.BeginBulk(); // Intentionally lose the scope to simulate uncommitted transaction loss.
+            var quarantine = new Quarantine(db, null, _ => Path.Combine(_t.Root, "Q"));
+            entry = quarantine.MoveIn(source, false, 5, "m", "b", "source");
+            Assert.Single(quarantine.ListActive());
+        }
+        using var reopened = new CleanSweepDb(dbPath);
+        Assert.Empty(new Quarantine(reopened).ListActive());
+        Assert.False(File.Exists(source));
+        Assert.True(File.Exists(entry.QuarantinePath));
+    }
+
+    private sealed class FailedPreAction : IPreActionRunner
+    {
+        public IDisposable? Run(string action, out string? error) { error = "audit service stop failed"; return null; }
+    }
+
+    [Fact]
+    public async Task FailedServiceStop_DoesNotPreventCleanup()
+    {
+        var source = _t.File(Path.Combine(_t.Vars["Temp"], "source.txt"));
+        var ctx = Context("""{"path":"%Temp%","preActions":["stopService:wuauserv"]}""");
+        var engine = new CleanEngine(_t.Guard, Q, new OperationLog(_db), new FailedPreAction());
+        var report = await engine.CleanAsync(await Scan(ctx), null, default);
+        Assert.Single(report.Failures);
+        Assert.Equal(1, report.FilesQuarantined);
+        Assert.False(File.Exists(source));
+    }
+
+    [Fact]
+    public async Task BundledNuGetRule_SelectsFreshTemporaryFile()
+    {
+        var source = _t.File(Path.Combine(_t.Vars["Temp"], "NuGetScratch", "recent.tmp"));
+        _t.Dir(Path.Combine(_t.Vars["LocalAppData"], "NuGet"));
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "rules", "dev.json"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        var rules = new RuleLoader(_t.Guard).LoadDirectory(Path.Combine(dir.FullName, "rules"));
+        var ctx = new ScanContext { Env = _t.Env, Guard = _t.Guard, Whitelist = new(), Rules = rules.Rules };
+        var items = await new ScanScheduler().RunAsync(new[] { RuleScanner.AppCache() }, ctx, null, default);
+        Assert.Contains(items, i => i.DefaultSelected && i.Files.Any(f => f.Path == source));
+    }
+}

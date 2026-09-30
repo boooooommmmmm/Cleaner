@@ -1,0 +1,10 @@
+{
+  "kind": "fingerprints",
+  "version": 2,
+  "generated": "2026-09-30T01:52:12Z",
+  "files": {
+    "fingerprints.json": "445370dc152a3a2c15f5d3d8173c2689c312cfdaa7b53ed65b232397c8194ad9"
+  },
+  "keyId": "release-2026-09",
+  "signature": "naWWduD1j9XD4Vp1Zm\u002BVfwK8kOXH\u002BlB2g/\u002B8NfQ31ZqQYup3DdYcphUj1EzjX7eYNXSlPeqEN/WtaSeXgZ0l3Q=="
+}

@@ -1,0 +1,109 @@
+<UserControl x:Class="CleanSweep.App.Views.UninstallPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:UninstallViewModel}">
+    <Grid Margin="28,24,28,20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0">
+            <TextBlock Text="软件卸载" Style="{StaticResource Text.Title}"/>
+            <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                       Text="列出注册表、应用商店与用户目录中的已安装软件。卸载只调用软件自己的官方卸载程序，卸载后可一键扫描它遗留的用户数据。"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1" Margin="0,18,0,12">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="刷新" Style="{StaticResource Button.Primary}" Command="{Binding RefreshCommand}" MinWidth="100"/>
+                <TextBox Text="{Binding Search, UpdateSourceTrigger=PropertyChanged}" Width="220" Height="34" Margin="12,0,0,0" VerticalContentAlignment="Center" Padding="6,0"
+                         AutomationProperties.Name="搜索软件"/>
+                <CheckBox Content="只看疑似预装软件" IsChecked="{Binding OnlyBloatware}" VerticalAlignment="Center" Margin="16,0,0,0"/>
+                <CheckBox Content="显示系统组件" IsChecked="{Binding ShowSystemComponents}" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            </StackPanel>
+            <TextBlock Text="{Binding Summary}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+        </Grid>
+
+        <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
+            <Grid>
+                <ListView ItemsSource="{Binding View}" BorderThickness="0" SelectionMode="Single"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled" VirtualizingPanel.IsVirtualizing="True">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="名称" Width="300">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:UninstallRow}">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}" FontSize="13" ToolTip="{Binding Name}"/>
+                                            <TextBlock Text="{Binding Tags}" Style="{StaticResource Text.Secondary}" Visibility="{Binding Tags, Converter={StaticResource NullToVis}}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="发布者" Width="180" DisplayMemberBinding="{Binding Publisher}"/>
+                            <GridViewColumn Header="版本" Width="110" DisplayMemberBinding="{Binding Version}"/>
+                            <GridViewColumn Header="来源" Width="70" DisplayMemberBinding="{Binding SourceText}"/>
+                            <GridViewColumn Header="大小" Width="80" DisplayMemberBinding="{Binding SizeText}"/>
+                            <GridViewColumn Header="安装日期" Width="90" DisplayMemberBinding="{Binding InstallDateText}"/>
+                            <GridViewColumn Header="操作" Width="260">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate DataType="{x:Type vm:UninstallRow}">
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="卸载" Style="{StaticResource Button.Link}" Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.UninstallCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button Content="静默卸载" Style="{StaticResource Button.Link}" Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.UninstallQuietCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button Content="扫描残留" Style="{StaticResource Button.Link}"
+                                                    Command="{Binding DataContext.ScanResidueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button Content="打开位置" Style="{StaticResource Button.Link}" Visibility="{Binding CanOpenLocation, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.OpenLocationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" ToolTip="{Binding Note}" MaxWidth="120"
+                                                       Visibility="{Binding CanUninstall, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                            Visibility="{Binding Rows.Count, Converter={StaticResource CountToVis}, ConverterParameter=invert}">
+                    <TextBlock Text="" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="40" HorizontalAlignment="Center" Foreground="{StaticResource Brush.TextSecondary}"/>
+                    <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Subtitle}" Margin="0,12,0,0" HorizontalAlignment="Center" TextAlignment="Center" MaxWidth="480"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- 安装监控 -->
+        <Border Grid.Row="3" Style="{StaticResource Card}" Margin="0,12,0,0">
+            <StackPanel>
+                <Grid>
+                    <TextBlock Text="安装监控" FontWeight="SemiBold" FontSize="15"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button Content="记录安装前快照" Command="{Binding TakeSnapshotCommand}"/>
+                        <Button Content="与快照比对" Command="{Binding CompareSnapshotCommand}" Margin="8,0,0,0"/>
+                        <Button Content="清除快照" Style="{StaticResource Button.Link}" Command="{Binding ClearSnapshotsCommand}" Margin="8,0,0,0"/>
+                    </StackPanel>
+                </Grid>
+                <TextBlock Text="{Binding MonitorStatus}" Style="{StaticResource Text.Secondary}" Margin="0,8,0,0" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding MonitorResult}" Margin="0,8,0,0" TextWrapping="Wrap" FontFamily="Consolas, Microsoft YaHei UI" FontSize="12"
+                           Visibility="{Binding MonitorResult, Converter={StaticResource NullToVis}}"/>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Grid.Row="4" Margin="0,10,0,0">
+            <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent"
+                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,6"/>
+            <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"
+                       Visibility="{Binding Rows.Count, Converter={StaticResource CountToVis}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -1,0 +1,734 @@
+[
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\fingerprints\\manifest.json",
+    "Hash": "A5FBD8D9403073FAE80C981282DB6351575745F3F0ADD50A921DCE743B837D6B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\fingerprints\\fingerprints.json",
+    "Hash": "445370DC152A3A2C15F5D3D8173C2689C312CFDAA7B53ED65B232397C8194AD9"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\rules\\system.json",
+    "Hash": "ED7DA4D333B6E57430877FE2208B35250396306A9424D8E32C9580BC38C51DBC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\rules\\manifest.json",
+    "Hash": "3E6A21B91680389FF959A450FD28AD0F5755E268EDAA9CE562E557C557DE20A8"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\rules\\dev.json",
+    "Hash": "838DFA61986BF3AEBC3E239308B9351A0DD28125524308E75B434B8D4551592E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\rules\\browsers.json",
+    "Hash": "4DA25C69647AD8B0B55E57CF06C559100D530DFD26801F33012C0B854C0FA07E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\rules\\apps.json",
+    "Hash": "F80677E51FA8E94727CE0E05C0E342E63E116DED1DAFD1DF93BF4A16FF02395D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\installer\\CleanSweep.iss",
+    "Hash": "8C7FE04719AB8BBB955B4C14A393646EEBD8BF215EBDB6946F195B7D606979DC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Service\\Program.cs",
+    "Hash": "7AA4B34F2791E394C524A957FBAD9A2490BF229301CAD9CB746CB3244E17374E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Service\\CleanSweep.Service.csproj",
+    "Hash": "9C92971D7196CBF393957F9EBD842794C29AB883E7D22A63A7CA54B771C27384"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\popups\\popup-rules.json",
+    "Hash": "6A1256378096FFD29BC5142C09EDDC35F832CE0D8859D3E6185344FD9D08A7E3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\popups\\manifest.json",
+    "Hash": "20F558FDD500F6A7F7AC89A6DE6FDCE48A16B481FDEC83D8E42C9115F9138F58"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\CleanEngineTests.cs",
+    "Hash": "0276F1C098CF229151948104B4325E9CD1B92675295FDDB8CF789F480270FB53"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\BackupTests.cs",
+    "Hash": "50BA2C2F16852C18A5028A288EB1087BD598ECF3DED6BB4BFCC17FC802732C05"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\AppUpdateTests.cs",
+    "Hash": "A29971C249C9B8C15C1560561659747430771FBE95AA76A11A4D77BBE6F20F2B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\DuplicateFinderTests.cs",
+    "Hash": "6034872A6C82C1D4B6AD63FE71AD600CD36F8A9642ABC460A88473E85231C352"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\CleanSweep.Core.Tests.csproj",
+    "Hash": "6BF8C1F4856C7CD6D80CAA4C6E25EFB4B6F1C0ABE4B95A6EBC7832CC54B4C149"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ElevationTests.cs",
+    "Hash": "FAEF19E9E30024846768917B5D5B7B79E38A4BBAD46224CF0114B0D8B15BBA66"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\PathGuardTests.cs",
+    "Hash": "35607B009BEF641B7654685F3BB47BF8616474DD599E424766F679E089C23C89"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\OptimizeTests.cs",
+    "Hash": "B29022A4B812F8D08CA32B7FB3816E954E06F3272BAAEF7F8607EFD2D9657D47"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\QuarantineTests.cs",
+    "Hash": "AF68D8EF72C98F20C60F87E291A11DC0734156267D48600515B0EC40A7F31CAB"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\RegistryCleanerTests.cs",
+    "Hash": "6E626AAF271FDA3F2C67E5F1FB8F45BF81FCAB049B339FB8CDA65DDD8B80CB4A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ToolsTests.cs",
+    "Hash": "1EB294C92A0FA66EECCDB2AD9A18CC7CFB5E7147E530570348A2D2136C57340A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\TestEnv.cs",
+    "Hash": "C642C81A392D4EAAC5AD87E4F7FBF7FF162F5326CB042C4E449BEF10E18A95AC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\StartupTests.cs",
+    "Hash": "1B0AADC3FC8EBB0794BC9B75F8BA6CAA372599B17073A50C0AD54E6F239C00D9"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\StartupRealEnvironmentTests.cs",
+    "Hash": "B0AFA0F7B5B759CF0E25FADB0BF4345F4260D4DF69CB024BBBF3641D57DBB7A5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\SecurityRegressionTests.cs",
+    "Hash": "DB6511AD3098B384FCF06C2E11581D1048B674885A16EEAA43AB1E49F7643015"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\SecurityFixTests.cs",
+    "Hash": "250C093A9887683F1D0090E3E09543767A0F60D881C94EE5DB728DAA89D2DAE1"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ScanSchedulerTests.cs",
+    "Hash": "B09C9712484EBE06250AAE2E17B6561A7EE2187133D53FBEF81EC3709DE2449D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\RuleLoaderTests.cs",
+    "Hash": "B1BBD2C18E919B8E2096A649659F168EC565618F7A8DC2E3FB25C1D67E6246BE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ReviewRound2Tests.cs",
+    "Hash": "4399B33C1AC40F62BEBB20F5D844FD56C229046CF30BF65F1FB4C85B74A5B7E3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ReviewFixTests.cs",
+    "Hash": "FB98A18B918EAA8C7F615129E5A49280E9EDACA1B0C43F24B93096FC055E5753"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ResidueTests.cs",
+    "Hash": "47A7FA9EAD0888419743A3E1281DF6ADF1438AAFF0E59F5D129C65BD4D0A8393"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tests\\CleanSweep.Core.Tests\\ReleaseWorkTests.cs",
+    "Hash": "54DB460C5EE3FD0D7A544CABA40BABD77EE2513F1AACA778437E441ED56BE3BF"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Disk\\DiskMedia.cs",
+    "Hash": "7F906749BABF9A03F64D1ED8F0631D6C4F6198E3A43CF23A25C2107988DA4A0E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Disk\\DiskHealth.cs",
+    "Hash": "3A858173EBEE7C752C2448FBBBEB539D7DC7496612632A6905FD4C31E805FB87"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\CleanSweep.Core.csproj",
+    "Hash": "AE6E03A608B011A54681C8BA9DECDFD5E9F986B820B8C46717342B85310D35DA"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\uninstall.ps1",
+    "Hash": "B19D23B97588DD9FC8FCA5A6655D873877A57902BE4045B4746393C77335C92A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\sign-data.ps1",
+    "Hash": "8D7E38BBDE20796CEB3CD0806C352E261DED779ECE497B35A60AE05F800C98BC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Uninstall\\UninstallWatcher.cs",
+    "Hash": "89D7140A387FDED9B9D67B7F598BC2D78220A52A782B8F666F7989DDF0454C9C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Uninstall\\UninstallHistory.cs",
+    "Hash": "E7970559E92F99A0E0BF8CFA56D85E1063846719BF44658EC78C43EA6D515E50"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Uninstall\\Uninstaller.cs",
+    "Hash": "7D0489187CAFF5C72767E25617DF59D773D3F82365CCD4BED03B719AA1944040"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Uninstall\\InstallMonitor.cs",
+    "Hash": "E943D928168B3F01BDE1D4E308D2F0078A198D2C169B1A9A7319902090E5A3A0"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Uninstall\\Bloatware.cs",
+    "Hash": "823F0CB92FFB4EC380A996695986164F35222E67B169E86C6A6A49E4CBE54942"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Rules\\RuleScanner.cs",
+    "Hash": "D27894354A010F8D0605867C86A87363F12015DBB165380F4857F7F9FF7821BE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Rules\\RuleLoader.cs",
+    "Hash": "B10FEDD373EE2E2B901DA8B17AC93E502585FF9FC37749D5136AE5FF7F66B563"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Rules\\RegistryDetect.cs",
+    "Hash": "5C22275B18C144D84152FC2DAFD3EA33307504871221C755EF5FDA83F1A2B41C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Rules\\CleanRule.cs",
+    "Hash": "91E99C1E9FD5A969D71C182CCEDF31262B066BCFAB5C263377CD3AD7256D8BAE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\UninstallPage.xaml.cs",
+    "Hash": "068466D238C23BE0610373253B5FBDA6E8C8E8C3B9EBAB642927C5591DE4547B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\UninstallPage.xaml",
+    "Hash": "2A63B92A178D9178E29848C30287FB89242BAF9AD38B995212BC43A3A43CC675"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SystemInfoPage.xaml.cs",
+    "Hash": "8BFC8C8C17B59508899472D77361B34F9A793A3AEC829F053BF5D2ED907A993A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SystemInfoPage.xaml",
+    "Hash": "05A7F7CD6076962311286749CC946EC6870ADA7ACFB28D2020FAED381F83C6C7"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\StartupPage.xaml.cs",
+    "Hash": "48BFECC50F97BE53EE933901D7F2B389A6951BD3171D645A05A3325A0C6703C6"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\StartupPage.xaml",
+    "Hash": "5FD52DB5400ABFA529491E93E77651F1F5418BE04317788804AFC351DCE18A37"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SpacePage.xaml.cs",
+    "Hash": "5298809D12329CCFAB381019DEAE759FD073BE8DA9849BC25404D802851942DA"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SpacePage.xaml",
+    "Hash": "D89416753B87F345883B94A5B70B0EDF0D0B967652A4DCB8253F15CC70F90333"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\ShredPage.xaml.cs",
+    "Hash": "2C7F888459BB813ACDBD2B7FECD292AE4CABC3B8EB8CDD0F7ECB4E00B14219A5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\ShredPage.xaml",
+    "Hash": "87979F0C451B183AC6DFB1FE018C1E3EBCD1FD70B70494059BF5749ABFBD2027"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SettingsPage.xaml.cs",
+    "Hash": "9CC0EAB7627DB765CCAC1F77114E65997EE0D635208D6F9300E8A2AAEF687D09"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\SettingsPage.xaml",
+    "Hash": "626273B864C1DCC8F1CBE22C7B11E93F45543C92E4A058CFF68B7F74A3DEBDFF"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\RepairPage.xaml.cs",
+    "Hash": "FEE3CF36535533549D8CAD78D82B0A09C5838633E940E589F394DFFFF1D61A37"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\RepairPage.xaml",
+    "Hash": "1CDD0956112BF606264A200D0612B5EEB177DAC1697BAD6644763FEA0C611DCC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\QuarantinePage.xaml.cs",
+    "Hash": "554DF8BB7F32BA3836173331936D27C14DF1BEF70D103073D78F35FBFCF2BA1A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\QuarantinePage.xaml",
+    "Hash": "8086EE6CACDCA79655FEB4C1FE45607CBE9B4156815E629A786BBF09E83C8E95"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\PopupPage.xaml.cs",
+    "Hash": "66D5A16B239F39D2851845FE13752245680744889E1072812D94C0560600A01E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\PopupPage.xaml",
+    "Hash": "725B94CE7E13643C37DABD2BA8C89B9011B0416F1781D5C4358C37B9E84A6CCD"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\OptimizePage.xaml.cs",
+    "Hash": "3F6CB7596823BF47923386306E0CDE5FE8614C223715244F8CEA123F3D83DF27"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\OptimizePage.xaml",
+    "Hash": "3B2F300A50EA87A9830142C47017FEABB113F970A79B910A7E4246C9D9DED214"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\MemoryPage.xaml.cs",
+    "Hash": "EB3FC31B1E48FD387AADC3B0A0FF035D7DEDFF12C71A916502B6665C80B2B61B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\MemoryPage.xaml",
+    "Hash": "98B552BAA7CC06E8E7EB1727489A846F1A76E738933B520BFEF5C5DA43BAACAE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DuplicatesPage.xaml.cs",
+    "Hash": "8C3A92229B4D389E33E87024E3EAEBB39EEDBF9EE17B9ACBE5B00F8ECBF2C79A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DuplicatesPage.xaml",
+    "Hash": "E3542895A5D941A330513E91FC812E1126B1FC6EAF6C2FA2464F4FC89957CE45"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DriverPage.xaml.cs",
+    "Hash": "BBC5189156732C306F3891A8C6BCD91F2C5C3A15F0DE6498ABD00BD9BF1441DF"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DriverPage.xaml",
+    "Hash": "6295A8F0D799B10C80FAB7761BCA5FC3CF20A11F5DA2D2FB1A8832D27AB5E893"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DiskPage.xaml.cs",
+    "Hash": "DD18949F982788C6AF5A8402E52FFE06946930F19FB11DE6902357A676EA1C28"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DiskPage.xaml",
+    "Hash": "B88C9CA208C290795D6AE1352893729A24068DED50FF7C3FBEB3CFAAE1AA92A6"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DelayDialog.xaml.cs",
+    "Hash": "AD485181E5D34E6A1E0E36FC5A523FB16D1E50642564CDFFBD5EA246DB641D5D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\DelayDialog.xaml",
+    "Hash": "5F0449639778E8C2DCCFABE57B8A52857EBF84D0ECB3CBCA717D472937E2118F"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\CleanPage.xaml.cs",
+    "Hash": "E4AFA83D6BF31D0D1ACB7FB22BEE8558D90FCB27D84C82B8BF62F49E94265C7C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Views\\CleanPage.xaml",
+    "Hash": "619CE8079075CAC83097CD0FC400CE4F86CC268CD5C03F12FA11675E6A1C1AB3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Cleaning\\Quarantine.cs",
+    "Hash": "EA0E63A24A21436425EA49FA603C1D42ACDE79C8868D7B89803CE69E029EF4F0"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Cleaning\\PreActionRunner.cs",
+    "Hash": "660B7ECC830BCCAA98CC23E9D2BC9155F207A05490705B800D86038FD1ABF1E2"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Cleaning\\HandleMove.cs",
+    "Hash": "39753B03E889A656B071CF75A3AD6B0EE3435D5D7D3ECE4062A8A6AF8C38FCC6"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Cleaning\\CleanEngine.cs",
+    "Hash": "7BB0105454FE576CE36E7091CFD59CDC180D1C500319588F04B3C27E1A5A7F74"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\SysInfo\\SystemInfo.cs",
+    "Hash": "ACAC75EADC44AA9E3C28DA6DBB5A99620DEF2E4E56E05F5F15741D3FE8663700"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Residue\\ResidueScanner.cs",
+    "Hash": "3577097B24E6553E413DC97A0FFBFC2DAF7FC988FCB6D44612A2698044F0A478"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Residue\\DevCacheScanner.cs",
+    "Hash": "0EB3D8D7E290D551E8A020B4384256A7B319848FB5E4A090085DE31A75A99EFD"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Modules\\SpaceAnalyzer.cs",
+    "Hash": "30DF832EDC539DA74D27ECC9B6F40055B799AAF2A3C64CE9F39BFE6378CBBBD6"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Modules\\RecycleBin.cs",
+    "Hash": "D0FB2B71D7E186F26C83DD2ABF67B17BD0C2F271C1D85B4E2FF0A4279C5CF1FC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Modules\\DuplicateFinder.cs",
+    "Hash": "97C4824C94CC78D80B2FE88FC25DE6F60C1942209720B91A45ABA3EB4E45287C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\UninstallViewModel.cs",
+    "Hash": "02C83EFBFA9F5F0FCBEFE1DE6DDAFEDD021093867A2340601A13AB6EB0ECDAD6"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\ToolsViewModels.cs",
+    "Hash": "61FF238ADDDD8579BE147543389B72C337CC4B7ADB9085E12877A9927F6CC0D0"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\StartupViewModel.cs",
+    "Hash": "D75B9B66550D3142C19CFCB9718AEC045DD6A42550CFBA509EA07D0DAC714477"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\SpaceAnalyzerViewModel.cs",
+    "Hash": "CB6C4149D13EC465C60E5E456F358537DFBCC175B43E989F30B7858CA8EFB113"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\ShredViewModel.cs",
+    "Hash": "118131356C5AFE6C61EB8EFEAEAA14F292C5BF646DBB3E5AFAEB0EAF043A1985"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\ShellViewModel.cs",
+    "Hash": "2FAC70B575A6C2D3076AB9F2AD3091C6216C20AE8114D730089402854712D0BC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\SettingsViewModel.cs",
+    "Hash": "8C68A9B831CA65B044DF0C15E88A2612E25EC7DE314955FD3817080D7FEEB3B3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\ScanItemViewModel.cs",
+    "Hash": "E01D97D3984596AEC39FC92EB3422B51ADCC0068B63DA4669A41526DB856AF05"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\QuarantineViewModel.cs",
+    "Hash": "0CE69DEEFA9A6C4A7A891509246DE6286ECCB8496F7979252C6830B201341AA0"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\OptimizeViewModel.cs",
+    "Hash": "0A0DD1992F8CACA8BB9BB0C322766D65DE1C9C97767970903333BFA6F1BEDC22"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\MemoryViewModel.cs",
+    "Hash": "46D10A20476ED033FCEC6B0DB4A07AE681B6B612E6C939EE8A221E0EC02DF27A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\DuplicatesViewModel.cs",
+    "Hash": "CBE25946CFBF46A3173F60F9BF61757CE6266AF01E867A8341775ACFF1C1B2A8"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\DiskViewModel.cs",
+    "Hash": "1D6324A2AD1906D0ACB525A5BD6FAE252EB13A23F33356BC6711B833341E2E71"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\ViewModels\\CleanPageViewModel.cs",
+    "Hash": "431C008A2C76C0358C8461BE3CB61B9126410BC9FCD4E51DBA2A5F8EFBE83316"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Backup\\RestorePointService.cs",
+    "Hash": "6F531E6C44D87EAC51281C99CB99940A395BB198DC124A2ECBAF25884F483510"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Backup\\RegistryPath.cs",
+    "Hash": "9937A0A4C54150FDDB4876B32ACC8222960839E0E0DC036B85C5BA0028F2E371"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Backup\\RegistryBackup.cs",
+    "Hash": "97BB11ECCEF1B746CF423924D1E0D9CE827C8026117FA2C3F097A2169EE8A65C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Backup\\RegFile.cs",
+    "Hash": "B221658B03C9C2FABEAD48153C1C56566EBA9FE18C875AABFB8050C780246044"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\publish.ps1",
+    "Hash": "03579E8913F76F750C8FDCEBBCBEDE22CE7F1330444D2914439789FBB581AAE4"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Storage\\OperationLog.cs",
+    "Hash": "C938CBD05E063F0EA3B1B2DB2368241DA73760D54356D764146315129365BA14"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Storage\\CleanSweepDb.cs",
+    "Hash": "A0E09E17734696A3CA6323E8FA274F7A2B9CD8748511BA42D2072112BC2DD215"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Storage\\AppPaths.cs",
+    "Hash": "F961B07C66A6DE61AD5A7F0D61F00372BF0D7E7B8E21740A669DACE847C5098D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\scheduled-review\\run-review.ps1",
+    "Hash": "71D3B44822EBBB833A052959EE61E11D583C2D910F3455C514C6C28CA0CD5922"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\scheduled-review\\review-prompt.txt",
+    "Hash": "3701DE1840108C837F77B7C4AADA4D50C667EB3C18D6A0B3F108DB73C72EEB16"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\scheduled-review\\register-review.ps1",
+    "Hash": "AA2A230566895A8674BDD50B1DCD8BDFF195B4206A1122AF70B99EB91536C58D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Repair\\SystemRepair.cs",
+    "Hash": "3E6A9EE7BEB6F57449B270602EE5BD8AF832A918F22CDA76415EDA729FFC6C18"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Model\\ScanItem.cs",
+    "Hash": "70DFC43B76851177E0CF20CA301767D643E1A4A4E3DCEBB17F2F22487F4A85A5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Model\\RiskLevel.cs",
+    "Hash": "11AC4E0667135A92990E332A7D4ED665E5C37E7A9578C96EB4EF16556183B7DC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Services\\ElevationContext.cs",
+    "Hash": "7773D8C95F20D8DA400DF800D2561AC470924617427BE6E8CA422BCA2CB8F6B4"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Services\\AppSettings.cs",
+    "Hash": "9C777607CE6B3787FBEEDB407D00DAA658EA64064E7BB82266AF9716A468FC68"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Services\\AppServices.cs",
+    "Hash": "D9CBDC0424F88315FB538096A92B981F386595D292A8ADE59F0BF386411BFAD2"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\MainWindow.xaml.cs",
+    "Hash": "F2DCBA52147AAACC60B1C146B5E2855535C77CD0A0C69AE4DDB86B9D186F428D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\MainWindow.xaml",
+    "Hash": "FFA18327AD117488583F145D16F76CFC3C791B23C17E5EF4ECFBE7D9B30CD242"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\keys\\dev-signing-key.pem",
+    "Hash": "5F3B684816BD375D14E6681722F351203C0F200DFF21516D8EB9DE5C44C4E13E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\install.ps1",
+    "Hash": "3EDE4CA706C119D3456BDFD2EF67AD2F7F849FC47B4D26A5752397CDC3DB7B58"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\StartupManager.cs",
+    "Hash": "7CDDFAA5E8AFB6B5C0C0940AC1AFF8E75C7FAF5D3EE3863DCA5BC7D3F983C89C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\StartupItem.cs",
+    "Hash": "796BAC1CBDC6F572D17929989EC63742E3228CDD67F9421EF5019D719B0957BE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\StartupInfoParser.cs",
+    "Hash": "A2993D06EABF16D9919553EAB3DC91F808C95F5F35FFDB157E2A98F623E35382"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\StartupApproved.cs",
+    "Hash": "D138DA91E23F2696E64C344E12520F37B66D83D5AA64352F8CA1897AF010FE3C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\FileSignature.cs",
+    "Hash": "4CB2256A020B00970E34B680CE651CAC6CE66D0B1E205F92487F427478083188"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\CommandLine.cs",
+    "Hash": "6228A80D6D02AB2C65402C476B93759872996948B160FEF38544620F912918AC"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Startup\\BootHistory.cs",
+    "Hash": "CEBC05BEB7F5FD2126CE00578EC2F253EE358DEAF72D9D934BB61F42BE653D98"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\RegistryCleaning\\RegistrySnapshot.cs",
+    "Hash": "72F7F75A9BAC652E9EC482B5CDC209BDCB257C66903278EB56F32EA99AEE6C8B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\RegistryCleaning\\RegistryProbe.cs",
+    "Hash": "5EF4C23E280E0A824305B6CE69D05746CF931017F1967FEDB4704A7F8743E109"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\RegistryCleaning\\RegistryOps.cs",
+    "Hash": "B208AC5F41DB69D86E73FE3BEE92D7F221E541C57EF1DA2A1BF1170FAC264D2D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\RegistryCleaning\\RegistryGuard.cs",
+    "Hash": "069FB6F8E91A9A3C46489A895F9D618836F7D4D7F4D932496CFD7D52990F95C5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\RegistryCleaning\\RegistryCleanerScanner.cs",
+    "Hash": "E045528AFE3ECD08C23B5B69FC6C3F37018E70A0CE25CF310F67F13F3C2FFC8F"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Memory\\MemoryManager.cs",
+    "Hash": "7B76012B592B23B03EF29408E2F2D2C72FC3FE631BE1AD80CC8981620B5CAD6B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\CleanSweep.SignData\\Program.cs",
+    "Hash": "601D66A1F0A8348C46D7DE8491310A0E14790F6CB06005DB4B2A879984D22762"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\CleanSweep.SignData\\CleanSweep.SignData.csproj",
+    "Hash": "A2A30A698458DEFA06C3DA7E1890511A5450C88065FD49EAB07AC95024A6ED51"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\tools\\release.ps1",
+    "Hash": "2F365D556C92F0C05E0CBECA4CDA5B4C5C728663FB6F2A9EB4DA69AC8705D197"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Helpers\\Format.cs",
+    "Hash": "E7C427960C85922899F645FE6AF56337DDD9A6328FDA5BDA5A48644BCE75727A"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Helpers\\Converters.cs",
+    "Hash": "A623325BA5402C0A7424413FD7BDE8FEE0E04469C74E7BC9FBC451D0F6EAE643"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\GlobalUsings.cs",
+    "Hash": "9EB56B713F4BD450C169F140E74FF7B6D5E456F3742A30188B947223D01628E4"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Settings\\Whitelist.cs",
+    "Hash": "980DDBD05F2B41B62E9A82BEC6E7D6B760DB3495E766694BDCD0124FDCFD9A8E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Privacy\\PrivacyScanner.cs",
+    "Hash": "76B3FBD06CD86A0A9F4CC3A4D1C26BB2FC6074D9CEB667746AD22315F410F5BB"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Privacy\\FileShredder.cs",
+    "Hash": "6432B7EA62DE197BEACF714B995254CDBE5FB884726DA5B264D6199CE06B01C0"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Inventory\\UserProfiles.cs",
+    "Hash": "EBB7791B679585A46C39A4ED140A85C416791BF78AC5EA1121D96887BD116C28"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Inventory\\NameKey.cs",
+    "Hash": "93CA1B03CFC0D4A8E59147088F7881111BEBA35263FCA9B503C21F1D268972AA"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Inventory\\InstalledApp.cs",
+    "Hash": "FF695BE827E2DDE417EFFBBB975EC63FB5D341D11464225B4C705003A7ADE9E1"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Inventory\\AppInventory.cs",
+    "Hash": "BAE7F21644F2BCAB1C86E0DBB7539CB37D80CCB1B4AB2BEC78009671C05C3AFB"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Inventory\\AppFingerprints.cs",
+    "Hash": "C4F4B1018A382CE5A16AF2127881195923E0F9E2C66924C0EE191D9FE9558653"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\Controls\\TreeMapControl.cs",
+    "Hash": "351F13BB7D22658E05A5D7F2E793807EBE8820A17566A12494237B94C69AFBE2"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\CleanSweep.App.csproj",
+    "Hash": "0D95B79DCF23BD6E80694A778EA7BE842E879019314F25CCB8175748FA83BDD7"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\AssemblyInfo.cs",
+    "Hash": "3FAC2AF92385F676E9A941BEFD23FE38F0A5FA6167D4A3A88F07E730C5595CA3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\App.xaml.cs",
+    "Hash": "2CC949177F860BEA0DB692BB4ECBD2F38182D35AC307BF0E9A8F1FD522A9EFC3"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\App.xaml",
+    "Hash": "0C5009C3A563B9FB02BD5E49F97212E7D87597FDC84FF2992AF36DAA7B8D4D3C"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.App\\app.manifest",
+    "Hash": "22277709045A74E24AF354A3CD38C745F947EBFEE5EF15F3019D7F03193E2D07"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Scanning\\ScanScheduler.cs",
+    "Hash": "7C040FDA88B99B3F11541DE51E363F58F1437E78BC256FBE31409B9D437F2611"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Scanning\\IScanner.cs",
+    "Hash": "C363E13CF71EC896FD1866015D771DCE8E1EB48236081BBB65E65A17F90EC506"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Popup\\PopupBlocker.cs",
+    "Hash": "BAE8BBE00E770A8F200B30077E8BCF27748561DA0725095F6BF287FDA27FB608"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\TrustedKeys.cs",
+    "Hash": "A3B1748AC3A21CE677AE412F534CF76711BE44B493373E367237455921CDF9B5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\SignedManifest.cs",
+    "Hash": "04DB515725E5F56EEC2F9F2EFCC73CB990AB5F244CF77C5BC9560B131D6C625B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\ReleaseManifest.cs",
+    "Hash": "DAE1F27830839175DED36D689E2C01436A7BD598B74563B30C6506582D355DD4"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\DataUpdater.cs",
+    "Hash": "BC98FD8A347C67B23B561C1CEF1268AC6818B08CA05DA9DA1897B7E38F7C857E"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\DataSets.cs",
+    "Hash": "C4C1157C61482716F5E7E967B4AB6A305C520AFD95FDAC5A76754117CD1EC545"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Integrity\\AppUpdater.cs",
+    "Hash": "A95FF663A5427A06D34EE48E9F3A405A2F7CF1E4315934F52AA3070F476547E9"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Drivers\\DriverStore.cs",
+    "Hash": "F688E73387BC96782110E6D5CB1F0519EBAA601AFEED00B002DAC8A5E8480E84"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Safety\\PathGuard.cs",
+    "Hash": "4226ACE0B751CFBEBAB39B7422D0E61A56366C11A5E0B21D8FE0CFD6072D91F5"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Safety\\ProtectedDirectory.cs",
+    "Hash": "7F47BB8323639E817E682DBA6F6F285B8904C9A2FEA7FC35E093E3AD0409E8C9"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Safety\\UnelevatedProcess.cs",
+    "Hash": "0C4F641908F19EBF44DB0015233FA2FF9467B3F0422A1EE98EC9912D818F2A47"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Safety\\SystemCommand.cs",
+    "Hash": "B16481B2F7E2077736A7D2F085150AA0B84999B133F3522816E9BDD625794BB8"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Elevation\\ElevatedOperations.cs",
+    "Hash": "552E6490B51745092926E9FB42B0EB84C3B657AE4E9A72900CEDC5F30B6B53AF"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Elevation\\ElevationClient.cs",
+    "Hash": "4979F5C6099ED3EF2EEC373F2D99F6ABB0583F9CE4488C5412407984F0FAEEFE"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Elevation\\ElevationNeed.cs",
+    "Hash": "A5973436461D9199107BC69C2E5FAC5DD6EF8E8BBDD0E1762A7F225228CE9E2B"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Elevation\\ElevationServer.cs",
+    "Hash": "B6FF467BA735913A89F4B2638B5DB2A5B9B62ECE0CE2BEC4EC8B4F113D8820FF"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Elevation\\ElevationProtocol.cs",
+    "Hash": "B29201B85852C67DCB577DDF5CE641ECA4B57710963D648924F0B02EB59AF0BA"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Optimize\\ServiceTweaks.cs",
+    "Hash": "9CF7141FCB1C5627AAE82F6360DBD4B89615C2BEECB554B9C100A589F2149284"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Optimize\\ContextMenuManager.cs",
+    "Hash": "8D9DF2EDC528B20955146332530694DB73D5E9BEA1E430C3FAD3DE44F7D8575D"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Optimize\\SystemTweaks.cs",
+    "Hash": "71CE849378C39B7B05CCF099C820D796265AD8FD494E19F265464E8115361D15"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Environment\\CurrentUserEnvironmentResolver.cs",
+    "Hash": "B70CFAA9A0309C891D2CB4F52AA2290F979A8B90998B4EA86F11204873646F24"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Environment\\IEnvironmentResolver.cs",
+    "Hash": "245925AD6FEE190FA0890BBD2DE25BB943D6701EA138AFCD2EC8E13F0931BE95"
+  },
+  {
+    "Path": "D:\\workspace\\Repo\\360Soft\\src\\CleanSweep.Core\\Environment\\ProfileEnvironmentResolver.cs",
+    "Hash": "C7EFE625EDDC34243DD92B76997469167ED0667C1942B5B5C6A8542859367404"
+  }
+]

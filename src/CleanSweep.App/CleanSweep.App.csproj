@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>CleanSweep.App</RootNamespace>
+    <AssemblyName>CleanSweep</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <Version>0.14.0</Version>
+    <Product>CleanSweep</Product>
+    <Company>CleanSweep</Company>
+    <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CleanSweep.Core\CleanSweep.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\rules\**\*.json" LinkBase="rules" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\fingerprints\**\*.json" LinkBase="fingerprints" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\popups\**\*.json" LinkBase="popups" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

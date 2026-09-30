@@ -1,0 +1,80 @@
+<UserControl x:Class="CleanSweep.App.Views.PopupPage"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:PopupViewModel}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="28,24,28,20" MaxWidth="1000" HorizontalAlignment="Left">
+            <TextBlock Text="弹窗拦截" Style="{StaticResource Text.Title}"/>
+            <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
+                       Text="不注入、不做全局钩子：定时枚举顶层窗口，进程名、窗口类名与标题都匹配规则才发送关闭消息，不结束进程。对独立的弹窗进程可用系统的 IFEO 机制阻止启动，随时可恢复。"/>
+
+            <Border Style="{StaticResource Card}" Margin="0,18,0,12">
+                <StackPanel>
+                    <CheckBox IsChecked="{Binding Enabled}">
+                        <TextBlock TextWrapping="Wrap">
+                            <Run Text="开启弹窗拦截（仅本程序运行期间）" FontWeight="SemiBold"/>
+                            <LineBreak/>
+                            <Run Text="{Binding Status, Mode=OneWay}" Foreground="{StaticResource Brush.TextSecondary}"/>
+                        </TextBlock>
+                    </CheckBox>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="规则" FontWeight="SemiBold" FontSize="15"/>
+                    <ItemsControl ItemsSource="{Binding Rules}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:PopupRuleRow}">
+                                <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="0,0,0,1" Padding="4,8">
+                                    <StackPanel>
+                                        <Grid>
+                                            <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding CountText}" HorizontalAlignment="Right" Foreground="{StaticResource Brush.Risk.Safe}" FontWeight="SemiBold"/>
+                                        </Grid>
+                                        <TextBlock Text="{Binding Detail}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"/>
+                                        <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Visibility="{Binding Note, Converter={StaticResource NullToVis}}"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                <StackPanel>
+                    <TextBlock Text="阻止启动（IFEO）" FontWeight="SemiBold" FontSize="15"/>
+                    <TextBlock Text="勾选即阻止该弹窗进程启动（在 Image File Execution Options 中把它重定向到一个立即退出的系统程序）。只允许规则库中列出的进程，写入前备份。" Style="{StaticResource Text.Secondary}" Margin="0,6,0,6" TextWrapping="Wrap"/>
+                    <ItemsControl ItemsSource="{Binding Blockable}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:BlockableRow}">
+                                <StackPanel Margin="0,3">
+                                    <CheckBox IsChecked="{Binding Blocked}" Content="{Binding Process}"/>
+                                    <TextBlock Text="{Binding Message}" Style="{StaticResource Text.Secondary}" Visibility="{Binding Message, Converter={StaticResource NullToVis}}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource Card}" Margin="0,0,0,12" Visibility="{Binding Recent.Count, Converter={StaticResource CountToVis}}">
+                <StackPanel>
+                    <TextBlock Text="最近拦截" FontWeight="SemiBold" FontSize="15"/>
+                    <ItemsControl ItemsSource="{Binding Recent}" Margin="0,8,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" Style="{StaticResource Text.Secondary}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

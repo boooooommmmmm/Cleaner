@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "rules": [
+    {
+      "id": "dev.npm",
+      "app": "npm",
+      "publisher": "npm, Inc.",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\npm-cache" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\npm-cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "npm 包缓存（内容寻址，可安全清理）" }
+      ]
+    },
+    {
+      "id": "dev.yarn",
+      "app": "Yarn",
+      "publisher": "Yarn",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\Yarn\\Cache" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\Yarn\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Yarn 包缓存" }
+      ]
+    },
+    {
+      "id": "dev.pnpm",
+      "app": "pnpm",
+      "publisher": "pnpm",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\pnpm-cache" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\pnpm-cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "pnpm 元数据缓存" }
+      ]
+    },
+    {
+      "id": "dev.pip",
+      "app": "pip",
+      "publisher": "Python Packaging Authority",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\pip\\cache" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\pip\\cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "pip 下载与构建缓存" }
+      ]
+    },
+    {
+      "id": "dev.nuget",
+      "app": "NuGet",
+      "publisher": "Microsoft",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%UserProfile%\\.nuget" }, { "directory": "%LocalAppData%\\NuGet" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\NuGet\\v3-cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "NuGet 源元数据缓存" },
+        { "path": "%LocalAppData%\\NuGet\\plugins-cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "NuGet 插件缓存" },
+        { "path": "%LocalAppData%\\Temp\\NuGetScratch", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "NuGet 临时目录", "minAgeDays": 1 },
+        { "path": "%UserProfile%\\.nuget\\packages", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "全局包缓存，清理后下次还原会重新下载所有包" }
+      ]
+    },
+    {
+      "id": "dev.gradle",
+      "app": "Gradle",
+      "publisher": "Gradle Inc.",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%UserProfile%\\.gradle" } ] },
+      "targets": [
+        { "path": "%UserProfile%\\.gradle\\daemon", "pattern": "*.log", "recurse": true, "risk": "safe", "when": "installed", "description": "Gradle 守护进程日志" },
+        { "path": "%UserProfile%\\.gradle\\caches", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "Gradle 依赖与构建缓存，清理后下次构建会重新下载" },
+        { "path": "%UserProfile%\\.gradle\\wrapper\\dists", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "已下载的 Gradle 发行版" },
+        { "path": "%UserProfile%\\.gradle", "kind": "directory", "risk": "confirm", "when": "uninstalled", "description": "Gradle 用户目录，未检测到 Gradle 或 Android Studio / IntelliJ" }
+      ]
+    },
+    {
+      "id": "dev.maven",
+      "app": "Maven",
+      "publisher": "Apache",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%UserProfile%\\.m2" } ] },
+      "targets": [
+        { "path": "%UserProfile%\\.m2\\repository", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "Maven 本地仓库，清理后下次构建会重新下载" }
+      ]
+    },
+    {
+      "id": "dev.cargo",
+      "app": "Cargo (Rust)",
+      "publisher": "Rust Foundation",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%UserProfile%\\.cargo" } ] },
+      "targets": [
+        { "path": "%UserProfile%\\.cargo\\registry\\cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "crate 下载缓存（.crate 压缩包）" },
+        { "path": "%UserProfile%\\.cargo\\registry\\src", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "解压后的 crate 源码，可由缓存重建" }
+      ]
+    },
+    {
+      "id": "dev.go",
+      "app": "Go",
+      "publisher": "Google",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\go-build" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\go-build", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Go 构建缓存" }
+      ]
+    },
+    {
+      "id": "dev.dotnet-sdk",
+      "app": ".NET SDK",
+      "publisher": "Microsoft",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%UserProfile%\\.dotnet" } ] },
+      "targets": [
+        { "path": "%UserProfile%\\.dotnet\\TelemetryStorageService", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "SDK 遥测暂存" },
+        { "path": "%LocalAppData%\\Temp\\dotnet", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "dotnet 临时目录", "minAgeDays": 1 }
+      ]
+    },
+    {
+      "id": "dev.jetbrains-toolbox",
+      "app": "JetBrains Toolbox",
+      "publisher": "JetBrains",
+      "category": "dev",
+      "detect": { "anyOf": [ { "directory": "%LocalAppData%\\JetBrains\\Toolbox" } ] },
+      "targets": [
+        { "path": "%LocalAppData%\\JetBrains\\Toolbox\\logs", "pattern": "*.log", "recurse": true, "risk": "safe", "when": "installed", "description": "Toolbox 日志", "minAgeDays": 7 },
+        { "path": "%LocalAppData%\\JetBrains\\Toolbox\\download", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "IDE 安装包下载目录，可能含进行中的下载" }
+      ]
+    }
+  ]
+}
