@@ -1,11 +1,11 @@
 {
-  "version": "0.16.0",
-  "asset": "CleanSweep-win-x64-0.16.0.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.16.0/CleanSweep-win-x64-0.16.0.zip",
-  "sha256": "2ee4c5919769c492a3c5ef5b553bc8113efd338e020e266f716289072c5bd188",
-  "size": 63158924,
-  "notes": "v0.16.0：正在使用的文件按跳过计数（不再弹失败对话框）、规则 exclude 字段、磁盘页普通权限提示与 defrag 错误识别、发布脚本一键发布",
-  "generated": "2026-09-30T09:24:30Z",
+  "version": "0.16.1",
+  "asset": "CleanSweep-win-x64-0.16.1.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.16.1/CleanSweep-win-x64-0.16.1.zip",
+  "sha256": "40cbb56f213ff7e3321326aef151597a0d79de7c7c4be21e90a8a0521abf294b",
+  "size": 63166746,
+  "notes": "v0.16.1：更新来源默认为官方仓库（此前默认空导致从不检查更新），GitHub 直连失败自动改用镜像；卸载程序已不存在的软件可备份后移除登记项",
+  "generated": "2026-09-30T15:47:52Z",
   "keyId": "release-2026-09",
-  "signature": "LPPYaEVaDlAd91INwUF9rFFGxkrg2a8/O6al8W67pMrvvVR74xVQAUXGULkBduQcq+KMCgwU/baPeko8r/0+NA=="
+  "signature": "2xLENrclZeJKZjNE08OYXuxmN4Z3Hq4nuGI9rwFX8DqLvsjJBlbPDA6bouba80vUWU373Z/+HymcoTQ4CNMz5g=="
 }
