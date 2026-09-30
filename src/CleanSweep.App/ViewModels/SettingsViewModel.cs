@@ -325,16 +325,17 @@ public sealed partial class SettingsViewModel : ObservableObject
         var release = AvailableRelease;
         if (release is null) return;
         var installDir = AppContext.BaseDirectory.TrimEnd('\\');
-        var msg = $"下载并安装 {release.Version.ToString(3)}（{release.Size / (1024.0 * 1024):0.#} MB）？\n\n下载完成并校验签名后程序会关闭，把新版本复制到\n{installDir}\n然后重新启动。" +
-                  (Core.Integrity.AppUpdater.IsWritable(installDir) ? "" : "\n\n安装目录需要管理员权限，届时会弹出 UAC。");
+        var needsAdmin = !Core.Integrity.AppUpdater.IsWritable(installDir) || Core.Integrity.ElevationServiceControl.Exists();
+        var msg = $"下载并安装 {release.Version.ToString(3)}（{release.Size / (1024.0 * 1024):0.#} MB）？\n\n下载完成并校验签名后程序会关闭，由安装目录里的程序再次校验并把新版本替换到\n{installDir}\n（失败会自动还原），然后重新启动。" +
+                  (needsAdmin ? "\n\n安装目录或提权服务需要管理员权限，届时会弹出 UAC。" : "");
         if (MessageBox.Show(msg, "程序更新", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
         IsUpdating = true;
         try
         {
             var progress = new Progress<(long Done, long Total)>(p => AppUpdateStatus = $"正在下载… {p.Done / (1024.0 * 1024):0.#} / {p.Total / (1024.0 * 1024):0.#} MB");
-            var staged = await _s.DownloadAppUpdateAsync(release, progress);
+            var zip = await _s.DownloadAppUpdateAsync(release, progress);
             AppUpdateStatus = "下载完成，正在安装…";
-            var err = Core.Integrity.AppUpdater.LaunchApply(staged, installDir);
+            var err = Core.Integrity.AppUpdater.LaunchApply(installDir, zip);
             if (err is not null)
             {
                 AppUpdateStatus = "安装未开始：" + err;

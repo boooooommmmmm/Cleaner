@@ -18,11 +18,22 @@ public partial class App : Application
         DispatcherUnhandledException += OnDispatcherUnhandledException;
         TaskScheduler.UnobservedTaskException += (_, args) => args.SetObserved();
 
-        // 自更新的第二阶段：本进程是暂存区里的新版本，把自己复制到安装目录后启动那边的程序并退出
+        // 自更新阶段二：本进程是安装目录里的旧版本（可信位置），复验下载的压缩包并解压到安装目录的暂存区，再把替换交给那里的新程序
         if (e.Args.Length >= 3 && e.Args[0] == "--apply-update")
         {
-            var error = int.TryParse(e.Args[2], out var oldPid)
-                ? CleanSweep.Core.Integrity.AppUpdater.ApplyFromCurrentDirectory(e.Args[1], oldPid)
+            var error = int.TryParse(e.Args[2], out var guiPid)
+                ? CleanSweep.Core.Integrity.AppUpdater.StageFromInstalledExe(e.Args[1], guiPid, CurrentVersion)
+                : "参数无效";
+            if (error is not null) MessageBox.Show("更新未完成，现有安装未改动：" + error, "CleanSweep 更新", MessageBoxButton.OK, MessageBoxImage.Error);
+            Shutdown(error is null ? 0 : 1);
+            return;
+        }
+
+        // 自更新阶段三：本进程是暂存区里的新版本，等旧进程退出后替换安装目录（失败全部还原），然后启动安装目录里的新版本
+        if (e.Args.Length >= 4 && e.Args[0] == "--apply-update-run")
+        {
+            var error = int.TryParse(e.Args[2], out var guiPid) && int.TryParse(e.Args[3], out var stagerPid)
+                ? CleanSweep.Core.Integrity.AppUpdater.ApplyFromStagedExe(e.Args[1], guiPid, stagerPid)
                 : "参数无效";
             if (error is not null) MessageBox.Show("更新未完成：" + error, "CleanSweep 更新", MessageBoxButton.OK, MessageBoxImage.Error);
             Shutdown(error is null ? 0 : 1);
@@ -64,8 +75,23 @@ public partial class App : Application
         _ = ((ShellViewModel)window.DataContext).CheckUpdatesInBackgroundAsync();
     }
 
+    private static Version CurrentVersion =>
+        typeof(App).Assembly.GetName().Version is { } v ? new Version(v.Major, v.Minor, Math.Max(v.Build, 0)) : new Version(0, 0, 0);
+
     private void RunStartupMaintenance()
     {
+        // 上次自更新留下的暂存区 / 备份目录：旧进程可能还在退出，多试几次
+        try
+        {
+            var installDir = AppContext.BaseDirectory;
+            for (var attempt = 0; attempt < 20; attempt++)
+            {
+                if (CleanSweep.Core.Integrity.AppUpdater.CleanupLeftovers(installDir)) break;
+                Thread.Sleep(500);
+            }
+        }
+        catch { }
+
         try
         {
             var unfinished = Services.Log.GetUnfinishedBatches();

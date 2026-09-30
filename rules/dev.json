@@ -119,6 +119,140 @@
         { "path": "%LocalAppData%\\JetBrains\\Toolbox\\logs", "pattern": "*.log", "recurse": true, "risk": "safe", "when": "installed", "description": "Toolbox 日志", "minAgeDays": 7 },
         { "path": "%LocalAppData%\\JetBrains\\Toolbox\\download", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "IDE 安装包下载目录，可能含进行中的下载" }
       ]
+    },
+    {
+      "id": "dev.composer",
+      "app": "Composer（PHP）",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Composer" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Composer\\files", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "包下载缓存，删除后下次安装重新下载" },
+        { "path": "%LocalAppData%\\Composer\\repo", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "仓库元数据缓存" }
+      ]
+    },
+    {
+      "id": "dev.bun",
+      "app": "Bun",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%UserProfile%\\.bun" }
+        ]
+      },
+      "targets": [
+        { "path": "%UserProfile%\\.bun\\install\\cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "包缓存，删除后下次安装重新下载" }
+      ]
+    },
+    {
+      "id": "dev.deno",
+      "app": "Deno",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\deno" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\deno\\deps", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "远程模块缓存" },
+        { "path": "%LocalAppData%\\deno\\gen", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "编译产物缓存" },
+        { "path": "%LocalAppData%\\deno\\npm", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "npm 包缓存" }
+      ]
+    },
+    {
+      "id": "dev.uv",
+      "app": "uv（Python）",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\uv" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\uv\\cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "包与 wheel 缓存，删除后下次安装重新下载" }
+      ]
+    },
+    {
+      "id": "dev.poetry",
+      "app": "Poetry（Python）",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\pypoetry" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\pypoetry\\Cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "包缓存与虚拟环境缓存" }
+      ]
+    },
+    {
+      "id": "dev.pub",
+      "app": "Dart / Flutter pub",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Pub\\Cache" },
+          { "directory": "%UserProfile%\\.pub-cache" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Pub\\Cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "pub 包缓存，删除后下次 pub get 重新下载" },
+        { "path": "%UserProfile%\\.pub-cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "pub 包缓存（旧位置）" }
+      ]
+    },
+    {
+      "id": "dev.electron",
+      "app": "Electron 构建缓存",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\electron" },
+          { "directory": "%LocalAppData%\\electron-builder" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\electron\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Electron 二进制下载缓存" },
+        { "path": "%LocalAppData%\\electron-builder\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "electron-builder 工具链缓存" }
+      ]
+    },
+    {
+      "id": "dev.vcpkg",
+      "app": "vcpkg",
+      "publisher": null,
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\vcpkg" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\vcpkg\\archives", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "二进制缓存，删除后受影响的库需重新编译" }
+      ]
+    },
+    {
+      "id": "dev.visualstudio",
+      "app": "Visual Studio",
+      "publisher": "Microsoft",
+      "category": "dev",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Microsoft\\VisualStudio" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\VisualStudio\\*\\ComponentModelCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "MEF 组件缓存，删除后下次启动重建" },
+        { "path": "%LocalAppData%\\Microsoft\\VSApplicationInsights", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "遥测日志" }
+      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Windows 系统清理软件 · 产品功能设计
 
-- 版本：v0.15（M1 到 M6 全部实现，发布前横切工作与 GitHub 自更新完成；四份外部审查共 52 条发现全部处理；累计十四轮代码评审）
+- 版本：v0.16（M1 到 M6 全部实现，发布前横切工作与 GitHub 自更新完成；四份外部审查共 56 条发现全部处理；规则通配目录段与两轮数据覆盖扩展；累计十四轮代码评审）
 - 日期：2026-09-30
 - 状态：功能与横切工作均已实现；仍需正式代码签名证书、正式数据签名密钥，以及在虚拟机以管理员身份做端到端验证，见文末变更记录与 README“发布与安装”
 - 变更记录见文末第 12 节
@@ -410,6 +410,7 @@
 - `when: "uninstalled"` 的 target 仅在 detect 失败时生效，归入 3.3 用户目录残留清理
 - `when: "always"` 两种情况均生效
 - 所有 `path` 在加载时经 Path Guard 校验，失败则整条规则拒绝加载
+- `path` 的目录段可含通配符 `*`（v0.16 起，如 `User Data\Profile *\Cache`、`Packages\*\TempState`、`JetBrains\*\caches`）：只匹配所在父目录的直接子目录，不递归，跳过重解析点，最多 200 个；通配符不能出现在环境变量段与最后一段，也不能紧跟环境变量（`%LocalAppData%\*\Cache` 拒绝）；加载时用占位名校验整条模板与静态前缀（前缀只豁免"范围过大"一条），扫描时每个展开出的具体路径再过一次护栏。每个匹配目录生成独立条目，条目名带匹配到的段（"网页缓存（Profile 1）"），条目 ID 按具体路径计算，提权服务重扫得到同样的 ID
 
 ### 7.4 权限模型与提权服务
 
@@ -496,6 +497,30 @@
 
 ## 12. 变更记录
 
+### v0.16（2026-09-30）程序自更新的三项审查修复（N11–N13）、数据覆盖第一轮扩展
+
+**自更新改为三阶段、执行者在可信位置**（docs/三轮代码复审-2026-09-30.md N11–N13，状态表已补齐；回归在 AppUpdateTests，共 13 用例）：
+
+- **N13 暂存区信任**：界面只负责下载（流式核对大小与哈希）并把签名的发布信息原样存在压缩包旁（`<zip>.release.json`），然后启动**安装目录里已有的** CleanSweep.exe 执行 `--apply-update <zip> <界面 pid>`（安装目录不可写或装有提权服务时 runas）。旧程序以拒绝他人写入的方式打开压缩包，先哈希后解压用同一个流，独立复验发布信息签名、版本只升（拒绝用旧的真实发布包降级）、大小与哈希、压缩包条目路径（无绝对路径、`..`、盘符，解压总量上限）、解压后三个数据集的签名，解压到安装目录下的 `.update-stage`（Program Files 下普通用户不可写），再启动那里的新程序执行 `--apply-update-run <安装目录> <界面 pid> <本进程 pid>`。任何拒绝都清空暂存目录。新程序启动时核对自己确实位于安装目录的暂存区。
+- **N12 服务协调与回滚**：新程序等两个旧进程退出、停止 CleanSweepElevation 服务（`IUpdateServiceControl`，真实实现用 ServiceController），把旧版本拥有的文件改名到 `.update-backup`，再复制新文件；任一步失败把已放入的新文件删除、备份原样搬回、服务按原状态重启，错误信息区分"已恢复原文件"与"恢复时又出错"。成功后重写安装清单、删除备份（旧进程仍占用时留给新版本启动时清理）、恢复服务、启动新版本。
+- **N11 不跟随重解析点、只动自己的文件**：目录枚举用 `AttributesToSkip = ReparsePoint`（Junction / 符号链接既不进入也不列出），写入路径上的每一级已存在目录不能是重解析点；只替换 / 删除安装清单 `install-files.txt`（`tools/publish.ps1` 生成，每次更新重写）里的文件与新包重名的文件，安装目录里用户放的其他文件不动；没有清单的首次升级视整目录为旧版本所有。`--updated` / 每次启动清理残留目录。
+- 版本升到 0.15.0（协议变化，0.14 从未发布过，无兼容负担）。
+
+**规则路径通配目录段**（用户"再扩展清理范围"；`PathGuard.ValidateRuleTemplate` / `ExpandWildcards`，`RuleTarget.HasWildcard`，`RuleScanner.BuildItems`；语法与约束见 7.3；回归 RuleWildcardTests 6 用例：合法 / 非法模板、Profile * 展开与 Junction 跳过、directory 类目标、多段通配与上限）。以此覆盖此前规则语法够不到的目录：Chromium 系浏览器（Chrome / Edge / Brave / Vivaldi / Chromium / 360 极速 / QQ 浏览器）的全部 `Profile *` 配置文件缓存（README 原"只处理 Default"的已知限制取消）、JetBrains 各产品的 caches / index（建议确认）/ log / tmp、Android Studio 同类目录、Visual Studio 各实例的 ComponentModelCache、应用商店应用的 `Packages\*\TempState`、`AC\INetCache`、`AC\Temp`（≥1 天）、微信各账号的 `WeChat Files\*\FileStorage\Cache` 与 `Temp`（建议确认）。
+
+**数据覆盖第二轮**（规则 63 → 74 条，数据集版本 4）：另加 GitHub Desktop、Signal、Bitwarden 的 Electron 缓存，Office 加载项与联机服务缓存，EA app / Ubisoft Connect 日志，Visual Studio 遥测日志，NVIDIA 旧位置着色器缓存与 GeForce Experience 网页缓存，Windows 安装 / 网络安装 / 更新编排器日志（≥7 天）。
+
+**数据覆盖第一轮**（规则 30 → 63 条，指纹 49 → 69 条，弹窗规则 2 → 3 条，数据集版本 3）：
+
+- 浏览器：Opera、Opera GX、Vivaldi、Chromium、360 极速 / 安全浏览器、QQ 浏览器的 Cache / Code Cache / GPUCache / ShaderCache（Service Worker 缓存为"建议确认"）。
+- 应用（已有指纹的只加"已安装"缓存目标，残留由指纹库负责，避免残留页重复列出）：Slack、Zoom、Telegram（文件 / 媒体缓存"建议确认"）、Notion、Obsidian、Postman、Figma、Cursor、VS Code Insiders、Epic Games Launcher、OBS Studio、网易云音乐（歌曲缓存"建议确认"）、OneDrive 日志。
+- 开发：Composer、Bun、Deno、uv、Poetry、Dart / Flutter pub、Electron / electron-builder、vcpkg（会导致重新编译 / 下载的为"建议确认"）。
+- 系统：WinINet 缓存（INetCache，≥1 天）、远程桌面位图缓存、.NET Framework 使用日志、DirectX 着色器缓存、NVIDIA / AMD / Intel 驱动着色器缓存、用户程序崩溃转储（%LocalAppData%\CrashDumps）、ThumbCacheToDelete。
+- 指纹（残留）：Opera、Vivaldi、Chromium、360 浏览器、QQ 浏览器、Cursor、企业微信、腾讯会议、迅雷、WPS、Google 云端硬盘、Dropbox、iTunes / iCloud、Logitech G HUB、Razer、Battle.net、EA app、Ubisoft Connect（gameSaves）、GOG GALAXY、Riot。
+- 弹窗：营销词与广告类名扩充，新增"托盘气泡式营销弹窗"泛化规则（进程名带 bubble / tray / mini / assist 等且标题含营销词），仍不点名厂商。
+- 有意未加：微信 / QQ / 钉钉 / 飞书的运行期缓存（缓存目录在账号子目录下，规则语法不支持通配目录；残留判定已由指纹覆盖）、Visual Studio 与 conda 的包缓存（删除会破坏环境）、Adobe 媒体缓存（在 Documents 下）。
+- 新增 DataCoverageTests：规模下限与类别分布、新规则不与指纹路径重复、无检测条件的系统规则只指向本地缓存、弹窗规则必须带类名或标题。
+
 ### v0.15（2026-09-30）两份定时审查报告的 23 项修复、GitHub 发布与仓库安全
 
 **审查修复**（docs/更新代码复审-2026-09-29.md R01–R15、docs/三轮代码复审-2026-09-30.md N01–N10，状态表在后者顶部）。要点：
@@ -580,7 +605,7 @@
 **M3 实现（设计文档 3.3、5.1、7.2、7.4）**
 
 - **App Inventory**（`Inventory/AppInventory.cs`）：注册表 Uninstall 键（HKLM 64 / 32 位、HKCU，跳过补丁条目）、应用商店包仓库（HKCU 与 AppxAllUserStore）、便携软件（`%LocalAppData%\Programs`、scoop、WinGet 目录里的 exe 版本信息）、正在运行的进程。快照带可靠性标志：注册表条目少于 5 条或读不到任何应用商店包时，"未找到"不作为已卸载的证据。
-- **指纹库**（`Inventory/AppFingerprints.cs`，数据 `fingerprints/fingerprints.json`，50 条）：路径 → 应用 + 检测方式（注册表、文件、目录、PATH 命令、已安装名称 / 发布者、包家族）+ 标志（loginState、license、gameSaves、devCache、programBody）+ cachePaths。路径经 Path Guard 校验，cachePaths 必须位于 paths 之下，不合法整条拒绝。
+- **指纹库**（`Inventory/AppFingerprints.cs`，数据 `fingerprints/fingerprints.json`，v0.9 时 50 条，v0.16 起 69 条）：路径 → 应用 + 检测方式（注册表、文件、目录、PATH 命令、已安装名称 / 发布者、包家族）+ 标志（loginState、license、gameSaves、devCache、programBody）+ cachePaths。路径经 Path Guard 校验，cachePaths 必须位于 paths 之下，不合法整条拒绝。
 - **用户目录残留清理**（`Residue/ResidueScanner.cs` + `RuleScanner.Residue()`）：扫描 LocalAppData / Roaming / LocalLow 一级目录、Packages（按包家族比对）、Programs（只按活跃度）、指纹库指定位置；`Microsoft` 目录只处理指纹库列出的子目录；厂商目录（已安装应用的发布者或已知厂商名）下钻到产品目录。判定顺序：规则库覆盖 → 指纹 → 已安装名称 / 安装位置 / 运行进程（活跃）→ 卸载记录（确认，不看新旧）→ 目录内 exe 版本信息（建议确认）→ 活跃度（180 天疑似 / 90 天未知 / 空目录 30 天）。硬性排除写死：Temp、ConnectedDevicesPlatform、Comms、D3DSCache、凭据目录、.ssh / .aws / .kube / .gnupg 等。Documents、Saved Games、OneDrive 接管目录一律标红只提示。管理员模式可扫描其他用户配置文件（`ProfileEnvironmentResolver` 按 profile 展开变量）、ProgramData 与已删除账户遗留的配置文件目录。
 - **开发者缓存**（`Residue/DevCacheScanner.cs`）：指纹库 devCache 的缓存目录（只清缓存不清配置）、项目根目录下 30 天未动的项目的 node_modules、conda 环境（只列出，高风险）；Docker Desktop 的 WSL 虚拟磁盘只显示体积。
 - **软件卸载**（`Uninstall/Uninstaller.cs`）：只运行官方卸载程序。MSI 一律改写为 `msiexec /x {ProductCode}`（不信任注册表里的其余参数）；exe 卸载程序必须存在；应用商店包用 `Remove-AppxPackage`，包全名严格正则校验；系统组件包拒绝。取消只停止等待不强杀。卸载后重扫清单确认并写入 `uninstall_history`。预装软件识别（`Bloatware.cs`）只是标记。**安装监控**（`InstallMonitor.cs`）：安装前快照（应用、关键目录一级子目录、服务、Run 项）与安装后比对，本阶段只识别不回滚。

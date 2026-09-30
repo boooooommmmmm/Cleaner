@@ -20,7 +20,8 @@
       "publisher": "Microsoft",
       "category": "system",
       "targets": [
-        { "path": "%LocalAppData%\\Microsoft\\Windows\\Explorer", "pattern": "thumbcache_*.db;iconcache_*.db", "recurse": false, "risk": "safe", "when": "always", "description": "缩略图与图标缓存，删除后系统自动重建" }
+        { "path": "%LocalAppData%\\Microsoft\\Windows\\Explorer", "pattern": "thumbcache_*.db;iconcache_*.db", "recurse": false, "risk": "safe", "when": "always", "description": "缩略图与图标缓存，删除后系统自动重建" },
+        { "path": "%LocalAppData%\\Microsoft\\Windows\\Explorer\\ThumbCacheToDelete", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "待删除的缩略图缓存" }
       ]
     },
     {
@@ -33,7 +34,10 @@
         { "path": "%LocalAppData%\\Microsoft\\Windows\\WER", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "Windows 错误报告（当前用户）" },
         { "path": "%Windir%\\Logs\\CBS", "pattern": "*.log;*.cab", "recurse": false, "risk": "safe", "when": "always", "description": "组件服务（CBS）日志" },
         { "path": "%Windir%\\Logs\\DISM", "pattern": "*.log", "recurse": false, "risk": "safe", "when": "always", "description": "DISM 日志" },
-        { "path": "%Windir%\\Logs\\WindowsUpdate", "pattern": "*.etl", "recurse": false, "risk": "safe", "when": "always", "description": "Windows 更新跟踪日志" }
+        { "path": "%Windir%\\Logs\\WindowsUpdate", "pattern": "*.etl", "recurse": false, "risk": "safe", "when": "always", "description": "Windows 更新跟踪日志" },
+        { "path": "%Windir%\\Logs\\MoSetup", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "Windows 安装 / 升级日志", "minAgeDays": 7},
+        { "path": "%Windir%\\Logs\\NetSetup", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "网络安装日志", "minAgeDays": 7},
+        { "path": "%ProgramData%\\USOShared\\Logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "Windows 更新编排器日志", "minAgeDays": 7}
       ]
     },
     {
@@ -44,7 +48,8 @@
       "targets": [
         { "path": "%Windir%\\Minidump", "pattern": "*.dmp", "recurse": false, "risk": "safe", "when": "always", "description": "蓝屏小型转储。若正在排查蓝屏问题请保留" },
         { "path": "%Windir%\\LiveKernelReports", "pattern": "*.dmp", "recurse": true, "risk": "safe", "when": "always", "description": "内核实时报告转储" },
-        { "path": "%Windir%\\MEMORY.DMP", "risk": "safe", "when": "always", "description": "完整内存转储。若正在排查蓝屏问题请保留" }
+        { "path": "%Windir%\\MEMORY.DMP", "risk": "safe", "when": "always", "description": "完整内存转储。若正在排查蓝屏问题请保留" },
+        { "path": "%LocalAppData%\\CrashDumps", "pattern": "*.dmp", "recurse": false, "risk": "safe", "when": "always", "description": "用户程序崩溃转储（WER LocalDumps）" }
       ]
     },
     {
@@ -92,6 +97,69 @@
       "category": "system",
       "targets": [
         { "path": "%Windir%\\Prefetch", "pattern": "*.pf", "recurse": false, "risk": "not-recommended", "when": "always", "description": "预读取数据。清空后系统需重新学习，短期内程序启动会变慢" }
+      ]
+    },
+    {
+      "id": "windows.inetcache",
+      "app": "Internet 临时文件（WinINet）",
+      "publisher": "Microsoft",
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\Windows\\INetCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "IE / Office 等使用 WinINet 的程序的网页缓存", "minAgeDays": 1}
+      ]
+    },
+    {
+      "id": "windows.rdp-cache",
+      "app": "远程桌面位图缓存",
+      "publisher": "Microsoft",
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\Terminal Server Client\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "远程桌面客户端的位图缓存，删除后自动重建" }
+      ]
+    },
+    {
+      "id": "windows.clr-usage-logs",
+      "app": ".NET Framework 使用日志",
+      "publisher": "Microsoft",
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\CLR_v4.0\\UsageLogs", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": ".NET Framework 程序集使用日志" },
+        { "path": "%LocalAppData%\\Microsoft\\CLR_v4.0_32\\UsageLogs", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": ".NET Framework 程序集使用日志（32 位）" }
+      ]
+    },
+    {
+      "id": "windows.d3d-shader-cache",
+      "app": "DirectX 着色器缓存",
+      "publisher": "Microsoft",
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\D3DSCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "DirectX 编译着色器缓存，删除后游戏首次启动稍慢" }
+      ]
+    },
+    {
+      "id": "gpu.shader-cache",
+      "app": "显卡驱动着色器缓存",
+      "publisher": null,
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\NVIDIA\\DXCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA DirectX 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\NVIDIA\\GLCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA OpenGL 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\AMD\\DxCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "AMD DirectX 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\AMD\\GLCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "AMD OpenGL 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\Intel\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "Intel 着色器缓存，自动重建" },
+        { "path": "%LocalAppData%\\NVIDIA Corporation\\NV_Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "NVIDIA 着色器缓存（旧位置），自动重建" },
+        { "path": "%LocalAppData%\\NVIDIA Corporation\\NVIDIA GeForce Experience\\CefCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "GeForce Experience 网页缓存" }
+      ]
+    },
+    {
+      "id": "windows.uwp-temp",
+      "app": "应用商店应用临时文件",
+      "publisher": "Microsoft",
+      "category": "system",
+      "targets": [
+        { "path": "%LocalAppData%\\Packages\\*\\TempState", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的临时文件目录", "minAgeDays": 1},
+        { "path": "%LocalAppData%\\Packages\\*\\AC\\INetCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的网页缓存", "minAgeDays": 1},
+        { "path": "%LocalAppData%\\Packages\\*\\AC\\Temp", "pattern": "*", "recurse": true, "risk": "safe", "when": "always", "description": "应用商店应用的临时文件", "minAgeDays": 1}
       ]
     }
   ]

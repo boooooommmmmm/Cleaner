@@ -220,23 +220,15 @@ public sealed class AppServices
         return r;
     }
 
-    /// <summary>下载并解压新版本到暂存区，校验通过后返回暂存区里的程序根目录；失败抛出异常。</summary>
+    /// <summary>
+    /// 下载新版本压缩包到数据目录（大小与哈希须与签名的发布信息一致），并把签名的发布信息存在旁边；返回压缩包路径，失败抛出异常。
+    /// 解压与校验不在这里做：那是安装目录里的程序（可信位置）的事，见 AppUpdater。
+    /// </summary>
     public async Task<string> DownloadAppUpdateAsync(ReleaseInfo release, IProgress<(long Done, long Total)>? progress, CancellationToken ct = default)
     {
-        var updater = new AppUpdater();
-        var staging = AppPaths.AppUpdateStagingDir;
-        var zip = await updater.DownloadAsync(release, staging, progress, ct).ConfigureAwait(false);
-        var stageDir = Path.Combine(staging, release.Version.ToString(3));
-        var bad = updater.Stage(zip, stageDir);
-        if (bad is not null)
-        {
-            Log.Write(null, "app", "stage-update", release.Asset, release.Size, false, bad);
-            throw new InvalidOperationException(bad);
-        }
-        try { File.Delete(zip); } catch { }
-        var root = AppUpdater.FindAppRoot(stageDir)!;
-        Log.Write(null, "app", "stage-update", root, release.Size, true, release.Version.ToString(3));
-        return root;
+        var zip = await new AppUpdater().DownloadAsync(release, AppPaths.AppUpdateStagingDir, progress, ct).ConfigureAwait(false);
+        Log.Write(null, "app", "download-update", zip, release.Size, true, release.Version.ToString(3));
+        return zip;
     }
 
     public ScanContext CreateScanContext() => new()

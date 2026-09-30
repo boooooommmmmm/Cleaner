@@ -334,6 +334,146 @@
       "detect": { "anyOf": [ { "installedName": "Minecraft" }, { "packageFamily": "Microsoft.4297127D64EC6_8wekyb3d8bbwe" }, { "installedName": "Minecraft Launcher" } ] },
       "flags": ["gameSaves"],
       "note": "saves 目录是世界存档。"
+    },
+    {
+      "id": "opera", "app": "Opera / Opera GX", "publisher": "Opera",
+      "paths": ["%AppData%\\Opera Software", "%LocalAppData%\\Opera Software"],
+      "detect": { "anyOf": [ { "installedName": "Opera" }, { "file": "%LocalAppData%\\Programs\\Opera\\launcher.exe" }, { "file": "%LocalAppData%\\Programs\\Opera GX\\launcher.exe" } ] },
+      "flags": ["loginState"],
+      "note": "浏览器配置（书签、密码、登录态）。"
+    },
+    {
+      "id": "vivaldi", "app": "Vivaldi", "publisher": "Vivaldi Technologies",
+      "paths": ["%LocalAppData%\\Vivaldi"],
+      "detect": { "anyOf": [ { "installedName": "Vivaldi" }, { "file": "%LocalAppData%\\Vivaldi\\Application\\vivaldi.exe" } ] },
+      "flags": ["loginState", "programBody"],
+      "note": "Application 子目录是程序本体，User Data 是配置与登录态。"
+    },
+    {
+      "id": "chromium", "app": "Chromium", "publisher": "The Chromium Authors",
+      "paths": ["%LocalAppData%\\Chromium"],
+      "detect": { "anyOf": [ { "installedName": "Chromium" }, { "file": "%LocalAppData%\\Chromium\\Application\\chrome.exe" } ] },
+      "flags": ["loginState", "programBody"],
+      "note": "开源版 Chromium：Application 是程序本体，User Data 是配置。"
+    },
+    {
+      "id": "qihoo-360-browser", "app": "360 浏览器", "publisher": "奇虎 360",
+      "paths": ["%LocalAppData%\\360Chrome", "%AppData%\\360se6"],
+      "detect": { "anyOf": [ { "installedName": "360极速浏览器" }, { "installedName": "360安全浏览器" }, { "installedName": "360 极速浏览器" }, { "installedName": "360 安全浏览器" } ] },
+      "flags": ["loginState"],
+      "note": "360 极速 / 安全浏览器的配置与登录态。"
+    },
+    {
+      "id": "qqbrowser", "app": "QQ 浏览器", "publisher": "Tencent",
+      "paths": ["%LocalAppData%\\Tencent\\QQBrowser"],
+      "detect": { "anyOf": [ { "installedName": "QQ浏览器" }, { "installedName": "QQBrowser" } ] },
+      "flags": ["loginState"],
+      "note": "QQ 浏览器配置与登录态。"
+    },
+    {
+      "id": "cursor", "app": "Cursor", "publisher": "Anysphere",
+      "paths": ["%AppData%\\Cursor", "%UserProfile%\\.cursor", "%LocalAppData%\\Programs\\cursor", "%LocalAppData%\\cursor-updater"],
+      "detect": { "anyOf": [ { "installedName": "Cursor" }, { "file": "%LocalAppData%\\Programs\\cursor\\Cursor.exe" } ] },
+      "flags": ["loginState", "programBody"],
+      "note": "编辑器设置、扩展与账号登录态；Programs\\cursor 是程序本体。"
+    },
+    {
+      "id": "wxwork", "app": "企业微信", "publisher": "Tencent",
+      "paths": ["%AppData%\\Tencent\\WXWork", "%UserProfile%\\Documents\\WXWork"],
+      "detect": { "anyOf": [ { "installedName": "企业微信" }, { "installedName": "WXWork" }, { "installedName": "WeCom" }, { "registry": "HKCU\\Software\\Tencent\\WXWork" } ] },
+      "flags": ["loginState"],
+      "note": "Documents\\WXWork 里是聊天文件与图片，属于用户数据。"
+    },
+    {
+      "id": "wemeet", "app": "腾讯会议", "publisher": "Tencent",
+      "paths": ["%AppData%\\Tencent\\WeMeet"],
+      "detect": { "anyOf": [ { "installedName": "腾讯会议" }, { "installedName": "Tencent Meeting" }, { "installedName": "TencentMeeting" } ] },
+      "flags": ["loginState"],
+      "note": "腾讯会议配置与登录态。"
+    },
+    {
+      "id": "thunder", "app": "迅雷", "publisher": "Xunlei",
+      "paths": ["%AppData%\\Thunder Network", "%LocalAppData%\\Thunder Network"],
+      "detect": { "anyOf": [ { "installedName": "迅雷" }, { "installedName": "Thunder" }, { "registry": "HKCU\\Software\\Thunder Network" } ] },
+      "flags": ["loginState"],
+      "note": "迅雷配置、登录态与任务列表；下载完成的文件在用户指定目录，不在这里。"
+    },
+    {
+      "id": "wps", "app": "WPS Office", "publisher": "Kingsoft",
+      "paths": ["%AppData%\\kingsoft", "%LocalAppData%\\Kingsoft"],
+      "detect": { "anyOf": [ { "installedName": "WPS Office" }, { "installedPublisher": "Kingsoft" }, { "installedPublisher": "金山" } ] },
+      "flags": ["loginState"],
+      "note": "WPS 配置、模板缓存与账号登录态。"
+    },
+    {
+      "id": "google-drive", "app": "Google 云端硬盘", "publisher": "Google",
+      "paths": ["%LocalAppData%\\Google\\DriveFS"],
+      "detect": { "anyOf": [ { "installedName": "Google Drive" }, { "installedName": "Google 云端硬盘" } ] },
+      "flags": ["loginState"],
+      "note": "DriveFS 本地缓存与账号状态；云端文件不受影响。"
+    },
+    {
+      "id": "dropbox", "app": "Dropbox", "publisher": "Dropbox, Inc.",
+      "paths": ["%AppData%\\Dropbox", "%LocalAppData%\\Dropbox"],
+      "detect": { "anyOf": [ { "installedName": "Dropbox" } ] },
+      "flags": ["loginState"],
+      "note": "Dropbox 客户端配置与登录态；同步文件夹是用户数据，不在这里。"
+    },
+    {
+      "id": "apple", "app": "iTunes / iCloud", "publisher": "Apple",
+      "paths": ["%AppData%\\Apple Computer", "%LocalAppData%\\Apple Computer", "%LocalAppData%\\Apple", "%LocalAppData%\\Apple Inc"],
+      "detect": { "anyOf": [ { "installedPublisher": "Apple Inc." }, { "installedName": "iTunes" }, { "installedName": "iCloud" }, { "packageFamily": "AppleInc.iTunes_nzyj5cx40ttqa" }, { "packageFamily": "AppleInc.iCloud_nzyj5cx40ttqa" } ] },
+      "flags": ["loginState"],
+      "note": "Apple 软件配置与登录态。iTunes 媒体库在 Music\\iTunes，属于用户数据。"
+    },
+    {
+      "id": "logitech-ghub", "app": "Logitech G HUB", "publisher": "Logitech",
+      "paths": ["%LocalAppData%\\LGHUB"],
+      "detect": { "anyOf": [ { "installedName": "Logitech G HUB" }, { "installedName": "LGHUB" } ] },
+      "flags": [],
+      "note": "外设配置文件与灯效设置。"
+    },
+    {
+      "id": "razer", "app": "Razer Synapse", "publisher": "Razer",
+      "paths": ["%AppData%\\Razer", "%LocalAppData%\\Razer"],
+      "detect": { "anyOf": [ { "installedPublisher": "Razer" }, { "installedName": "Razer Synapse" } ] },
+      "flags": ["loginState"],
+      "note": "Razer 外设配置与账号登录态。"
+    },
+    {
+      "id": "battle-net", "app": "Battle.net", "publisher": "Blizzard Entertainment",
+      "paths": ["%AppData%\\Battle.net", "%LocalAppData%\\Battle.net", "%LocalAppData%\\Blizzard Entertainment"],
+      "detect": { "anyOf": [ { "installedName": "Battle.net" } ] },
+      "flags": ["loginState"],
+      "note": "战网客户端配置与登录态；游戏存档在 Documents，不在这里。"
+    },
+    {
+      "id": "ea-app", "app": "EA app", "publisher": "Electronic Arts",
+      "paths": ["%LocalAppData%\\Electronic Arts", "%AppData%\\Electronic Arts"],
+      "detect": { "anyOf": [ { "installedName": "EA app" }, { "installedName": "EA Desktop" }, { "installedPublisher": "Electronic Arts" } ] },
+      "flags": ["loginState"],
+      "note": "EA 客户端配置与登录态。"
+    },
+    {
+      "id": "ubisoft-connect", "app": "Ubisoft Connect", "publisher": "Ubisoft",
+      "paths": ["%LocalAppData%\\Ubisoft Game Launcher"],
+      "detect": { "anyOf": [ { "installedName": "Ubisoft Connect" }, { "installedName": "Uplay" } ] },
+      "flags": ["loginState", "gameSaves"],
+      "note": "savegames 子目录是云存档的本地副本，删除前应确认已同步。"
+    },
+    {
+      "id": "gog-galaxy", "app": "GOG GALAXY", "publisher": "GOG",
+      "paths": ["%LocalAppData%\\GOG.com"],
+      "detect": { "anyOf": [ { "installedName": "GOG GALAXY" } ] },
+      "flags": ["loginState"],
+      "note": "GOG 客户端配置与登录态。"
+    },
+    {
+      "id": "riot", "app": "Riot 客户端（英雄联盟 / 无畏契约）", "publisher": "Riot Games",
+      "paths": ["%LocalAppData%\\Riot Games"],
+      "detect": { "anyOf": [ { "installedName": "Riot Client" }, { "installedName": "League of Legends" }, { "installedName": "VALORANT" }, { "installedName": "英雄联盟" } ] },
+      "flags": ["loginState"],
+      "note": "Riot 客户端配置与登录态。"
     }
   ]
 }

@@ -212,9 +212,18 @@ public sealed class RuleLoader
                 case TargetKind.Directory:
                 {
                     if (string.IsNullOrWhiteSpace(t.Path)) return (null, "files / directory 目标缺少 path");
-                    var verdict = _guard.ValidateRulePath(t.Path);
-                    if (!verdict.Allowed) return (null, $"路径被拒绝（{t.Path}）：{verdict.Reason}");
-                    expanded = verdict.FullPath;
+                    if (PathGuard.HasWildcardSegment(t.Path))
+                    {
+                        var tv = _guard.ValidateRuleTemplate(t.Path, out var template);
+                        if (!tv.Allowed) return (null, $"通配路径被拒绝（{t.Path}）：{tv.Reason}");
+                        expanded = template;
+                    }
+                    else
+                    {
+                        var verdict = _guard.ValidateRulePath(t.Path);
+                        if (!verdict.Allowed) return (null, $"路径被拒绝（{t.Path}）：{verdict.Reason}");
+                        expanded = verdict.FullPath;
+                    }
 
                     if (t.Pattern is not null && t.Pattern.IndexOfAny(new[] { '\\', '/', ':' }) >= 0)
                         return (null, $"pattern 不得包含路径分隔符：{t.Pattern}");

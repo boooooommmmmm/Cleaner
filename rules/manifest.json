@@ -1,13 +1,13 @@
 {
   "kind": "rules",
-  "version": 2,
-  "generated": "2026-09-30T01:52:11Z",
+  "version": 4,
+  "generated": "2026-09-30T04:21:00Z",
   "files": {
-    "apps.json": "f80677e51fa8e94727ce0e05c0e342e63e116ded1dafd1df93bf4a16ff02395d",
-    "browsers.json": "4da25c69647ad8b0b55e57cf06c559100d530dfd26801f33012c0b854c0fa07e",
-    "dev.json": "838dfa61986bf3aebc3e239308b9351a0dd28125524308e75b434b8d4551592e",
-    "system.json": "ed7da4d333b6e57430877fe2208b35250396306a9424d8e32c9580bc38c51dbc"
+    "apps.json": "e9c7dd4c29dcc7a978aa913746b52849241690a72e9a87f723c9938f2d92253d",
+    "browsers.json": "3c030fc5cbb816a43fdd8ef2bff54f26a4919fc4cbff388ddfe874d38cbd271d",
+    "dev.json": "b859f1c4e949364418392684b79cacb45adfa7e017581c62a637f82ccc605d45",
+    "system.json": "846b1f59f7b2a75d6bf473f3eda4e4fb67c2acb9519ef3467039d641690efb4b"
   },
   "keyId": "release-2026-09",
-  "signature": "ql\u002BK8TxDGlkXJC76C6XAYyqcc\u002BRW3y2tns41V3lw4nvWz\u002BOZpsfbFhXZiOM4hCakjxbMh/PC9zn5CBbOK6AdBw=="
+  "signature": "GBGQiIvp\u002BDeNLfKUrYuuLf63mbT38X8behYlbRB\u002B\u002BSrEXgvKcIrDkxiQMsaT8LwX/fpSKf2BPJAKJzVQvkmRjQ=="
 }

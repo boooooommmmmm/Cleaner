@@ -16,6 +16,10 @@
         { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
         { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
         { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
         { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
         { "path": "%LocalAppData%\\Google\\Chrome\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
         { "path": "%LocalAppData%\\Google\\Chrome", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Chrome 用户数据（含书签、密码、历史），应用已卸载" }
@@ -36,6 +40,10 @@
         { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
         { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
         { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
         { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
         { "path": "%LocalAppData%\\Microsoft\\Edge\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存" }
       ]
@@ -54,6 +62,10 @@
         { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
         { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
         { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
         { "path": "%LocalAppData%\\BraveSoftware\\Brave-Browser", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Brave 用户数据，应用已卸载" }
       ]
     },
@@ -70,6 +82,146 @@
       "targets": [
         { "path": "%LocalAppData%\\Mozilla\\Firefox\\Profiles", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存（所有配置文件的 cache2 / startupCache / thumbnails）" },
         { "path": "%AppData%\\Mozilla\\Firefox", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Firefox 用户数据（含书签、密码、历史），应用已卸载" }
+      ]
+    },
+    {
+      "id": "opera.browser",
+      "app": "Opera",
+      "publisher": "Opera",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\Opera Software\\Opera Stable\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Opera Software\\Opera Stable\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera Stable\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera Stable\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera Stable\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera Stable\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
+      ]
+    },
+    {
+      "id": "opera.gx",
+      "app": "Opera GX",
+      "publisher": "Opera",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\Opera Software\\Opera GX Stable\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Opera Software\\Opera GX Stable\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera GX Stable\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera GX Stable\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera GX Stable\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Opera Software\\Opera GX Stable\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
+      ]
+    },
+    {
+      "id": "vivaldi.browser",
+      "app": "Vivaldi",
+      "publisher": "Vivaldi Technologies",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Vivaldi\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Vivaldi\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
+      ]
+    },
+    {
+      "id": "chromium.browser",
+      "app": "Chromium",
+      "publisher": "The Chromium Authors",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Chromium\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Chromium\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
+      ]
+    },
+    {
+      "id": "qihoo.360chrome",
+      "app": "360 极速浏览器",
+      "publisher": "奇虎 360",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\360Chrome\\Chrome\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
+      ]
+    },
+    {
+      "id": "qihoo.360se",
+      "app": "360 安全浏览器",
+      "publisher": "奇虎 360",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\360se6\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\360se6\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\360se6\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\360se6\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" }
+      ]
+    },
+    {
+      "id": "tencent.qqbrowser",
+      "app": "QQ 浏览器",
+      "publisher": "Tencent",
+      "category": "browser",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Local State" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Default\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Default\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Default\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Profile *\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Profile *\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Profile *\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Profile *\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\ShaderCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "共享着色器缓存" },
+        { "path": "%LocalAppData%\\Tencent\\QQBrowser\\User Data\\Default\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存，清理后部分网站离线功能需重新加载" }
       ]
     }
   ]

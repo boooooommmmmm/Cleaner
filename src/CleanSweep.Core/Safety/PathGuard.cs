@@ -312,6 +312,89 @@ public sealed class PathGuard
         return Check(expanded);
     }
 
+    // ---------- 通配目录段 ----------
+
+    /// <summary>规则路径是否含通配目录段（如 "User Data\Profile *\Cache"、"Packages\*\TempState"）。</summary>
+    public static bool HasWildcardSegment(string rawPath) => rawPath.Contains('*');
+
+    /// <summary>
+    /// 校验含通配目录段的规则路径模板。约束：通配符只能出现在环境变量之后的整段里、最后一段不能是通配段（否则整个父目录都成了目标）、
+    /// 通配段只允许字母数字空格 . - _ 与 *；把通配段换成占位名后的路径必须通过 <see cref="ValidateRulePath"/>；
+    /// 第一个通配段之前的静态前缀也要通过校验，只有"范围过大"一条例外（%LocalAppData%\Packages\*\TempState 这类按子目录逐个清理的模板），
+    /// 且前缀不能只是一个裸变量（%LocalAppData%\*\Cache 不允许）。展开后的每个具体路径在扫描时仍要过 <see cref="Check"/>。
+    /// </summary>
+    public PathVerdict ValidateRuleTemplate(string rawPath, out string? expandedTemplate)
+    {
+        expandedTemplate = null;
+        if (string.IsNullOrWhiteSpace(rawPath)) return PathVerdict.Deny("路径为空");
+        var segs = rawPath.Split('\\', '/');
+        if (segs[0].Contains('*')) return PathVerdict.Deny("环境变量段不得含通配符");
+        if (segs[^1].Contains('*')) return PathVerdict.Deny("最后一段不得是通配段（会把整个父目录当作目标）");
+        var first = Array.FindIndex(segs, s => s.Contains('*'));
+        if (first < 0) return PathVerdict.Deny("路径不含通配段");
+        foreach (var seg in segs.Where(s => s.Contains('*')))
+        {
+            if (seg.Any(c => !(char.IsLetterOrDigit(c) || c is ' ' or '.' or '-' or '_' or '*')))
+                return PathVerdict.Deny($"通配段含不允许的字符：{seg}");
+        }
+        if (first < 2) return PathVerdict.Deny("通配段不得紧跟环境变量（前缀至少要有一级固定目录）");
+
+        var placeholder = string.Join('\\', segs.Select(s => s.Contains('*') ? "__cleansweep_wildcard__" : s));
+        var verdict = ValidateRulePath(placeholder);
+        if (!verdict.Allowed) return verdict;
+
+        var prefix = string.Join('\\', segs.Take(first));
+        var prefixVerdict = ValidateRulePath(prefix);
+        if (!prefixVerdict.Allowed && !(prefixVerdict.Reason?.Contains("范围过大") ?? false))
+            return PathVerdict.Deny($"通配前缀被拒绝（{prefix}）：{prefixVerdict.Reason}");
+
+        if (!_env.TryExpand(rawPath, out var expanded, out var err)) return PathVerdict.Deny(err!);
+        expandedTemplate = expanded.Replace('/', '\\').TrimEnd('\\');
+        return PathVerdict.Ok(expandedTemplate);
+    }
+
+    /// <summary>
+    /// 把含通配段的展开模板解析成具体路径。每个通配段只匹配所在父目录的直接子目录（不递归），跳过重解析点；
+    /// 最多返回 maxMatches 个。返回 (具体路径, 匹配到的通配段值，多段用 \ 连接)，不检查最终路径是否存在。
+    /// </summary>
+    public static IReadOnlyList<(string Path, string Match)> ExpandWildcards(string expandedTemplate, int maxMatches = 200)
+    {
+        var segs = expandedTemplate.Split('\\');
+        var first = Array.FindIndex(segs, s => s.Contains('*'));
+        if (first < 0) return new[] { (expandedTemplate, "") };
+        var candidates = new List<(string Path, string Match)> { (string.Join('\\', segs.Take(first)), "") };
+        var options = new EnumerationOptions { AttributesToSkip = FileAttributes.ReparsePoint, IgnoreInaccessible = true, MatchCasing = MatchCasing.CaseInsensitive };
+        for (var i = first; i < segs.Length; i++)
+        {
+            var seg = segs[i];
+            if (!seg.Contains('*'))
+            {
+                candidates = candidates.Select(c => (System.IO.Path.Combine(c.Path, seg), c.Match)).ToList();
+                continue;
+            }
+            var next = new List<(string, string)>();
+            foreach (var c in candidates)
+            {
+                if (!Directory.Exists(c.Path)) continue;
+                IEnumerable<string> dirs;
+                try { dirs = Directory.EnumerateDirectories(c.Path, seg, options); }
+                catch { continue; }
+                foreach (var d in dirs)
+                {
+                    var name = System.IO.Path.GetFileName(d);
+                    if (name is "." or "..") continue;
+                    try { if (IsReparsePoint(new DirectoryInfo(d).Attributes)) continue; } catch { continue; }
+                    next.Add((d, c.Match.Length == 0 ? name : c.Match + "\\" + name));
+                    if (next.Count >= maxMatches) break;
+                }
+                if (next.Count >= maxMatches) break;
+            }
+            candidates = next;
+            if (candidates.Count == 0) break;
+        }
+        return candidates;
+    }
+
     // ---------- 重解析点 ----------
 
     public static bool IsReparsePoint(FileAttributes attributes) =>

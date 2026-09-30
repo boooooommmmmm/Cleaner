@@ -18,7 +18,15 @@ try {
         dotnet run --project tools/CleanSweep.SignData -c Release -- verify (Join-Path $Out $kind) $kind
         if ($LASTEXITCODE -ne 0) { throw "$kind manifest verification failed" }
     }
-    Write-Host "已发布到 $Out"
+    # 安装清单：自更新时只替换 / 删除这里列出的文件，安装目录里用户放的其他文件不动
+    $outFull = (Resolve-Path $Out).Path.TrimEnd('\')
+    $manifest = Join-Path $outFull "install-files.txt"
+    $files = Get-ChildItem -Path $outFull -Recurse -File -Attributes !ReparsePoint |
+        Where-Object { $_.Name -ne "install-files.txt" } |
+        ForEach-Object { $_.FullName.Substring($outFull.Length + 1) } | Sort-Object
+    $lines = @("# CleanSweep 安装清单：本程序拥有的文件。更新时只替换 / 删除这里列出的文件。") + $files
+    [System.IO.File]::WriteAllLines($manifest, $lines, (New-Object System.Text.UTF8Encoding $false))
+    Write-Host "已发布到 $Out（$($files.Count) 个文件，安装清单 install-files.txt）"
 }
 finally {
     Pop-Location

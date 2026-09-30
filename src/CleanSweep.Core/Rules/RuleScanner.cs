@@ -62,11 +62,11 @@ public sealed class RuleScanner : IScanner
 
                 progress?.Report(new ScanProgress(Id, target.ExpandedPath ?? target.Command, items.Count, bytes));
 
-                var item = BuildItem(rule, target, ctx, ct);
-                if (item is null) continue;
-
-                items.Add(item);
-                bytes += item.SizeBytes;
+                foreach (var item in BuildItems(rule, target, ctx, ct))
+                {
+                    items.Add(item);
+                    bytes += item.SizeBytes;
+                }
             }
         }
 
@@ -74,36 +74,54 @@ public sealed class RuleScanner : IScanner
         return Task.FromResult<IReadOnlyList<ScanItem>>(items);
     }
 
-    private ScanItem? BuildItem(CleanRule rule, RuleTarget target, ScanContext ctx, CancellationToken ct)
+    /// <summary>含通配目录段的目标按实际存在的子目录逐个生成条目（条目名带匹配到的段，如"网页缓存（Profile 1）"），其余目标一个。</summary>
+    private IEnumerable<ScanItem> BuildItems(CleanRule rule, RuleTarget target, ScanContext ctx, CancellationToken ct)
     {
-        var id = MakeId(Id, rule.Id, target.ExpandedPath ?? target.Command ?? target.Kind.ToString());
+        if (target.HasWildcard && target.ExpandedPath is not null)
+        {
+            foreach (var (path, match) in PathGuard.ExpandWildcards(target.ExpandedPath))
+            {
+                ct.ThrowIfCancellationRequested();
+                var item = BuildItem(rule, target, ctx, ct, path, match);
+                if (item is not null) yield return item;
+            }
+            yield break;
+        }
+        var single = BuildItem(rule, target, ctx, ct, target.ExpandedPath, null);
+        if (single is not null) yield return single;
+    }
+
+    private ScanItem? BuildItem(CleanRule rule, RuleTarget target, ScanContext ctx, CancellationToken ct, string? expandedPath, string? match)
+    {
+        var id = MakeId(Id, rule.Id, expandedPath ?? target.Command ?? target.Kind.ToString());
+        var displayName = string.IsNullOrEmpty(match) ? target.Description : $"{target.Description}（{match}）";
 
         switch (target.Kind)
         {
             case TargetKind.Files:
             {
-                if (target.ExpandedPath is null) return null;
+                if (expandedPath is null) return null;
 
                 // 运行期再次校验路径（防止环境变量在加载后发生变化）
-                var verdict = ctx.Guard.Check(target.ExpandedPath);
+                var verdict = ctx.Guard.Check(expandedPath);
                 if (!verdict.Allowed) return null;
 
                 var cutoff = target.MinAgeDays > 0 ? DateTime.UtcNow.AddDays(-target.MinAgeDays) : (DateTime?)null;
                 List<FileEntry> files;
 
-                if (File.Exists(target.ExpandedPath))
+                if (File.Exists(expandedPath))
                 {
                     // path 直接指向单个文件（如 %Windir%\MEMORY.DMP）
-                    var fi = new FileInfo(target.ExpandedPath);
+                    var fi = new FileInfo(expandedPath);
                     if (PathGuard.IsReparsePoint(fi.Attributes) || PathGuard.IsCloudPlaceholder(fi.Attributes)) return null;
                     // 单文件目标与目录目标使用同一套年龄策略
                     if (cutoff is not null && fi.LastWriteTimeUtc >= cutoff) return null;
                     files = new List<FileEntry> { new(fi.FullName, fi.Length, fi.LastWriteTimeUtc) };
                 }
-                else if (Directory.Exists(target.ExpandedPath))
+                else if (Directory.Exists(expandedPath))
                 {
                     files = ctx.Guard
-                        .EnumerateFiles(target.ExpandedPath, target.Pattern, target.Recurse, ct)
+                        .EnumerateFiles(expandedPath, target.Pattern, target.Recurse, ct)
                         .Where(f => cutoff is null || f.LastWriteUtc < cutoff)
                         .ToList();
                 }
@@ -120,9 +138,9 @@ public sealed class RuleScanner : IScanner
                     ModuleId = Id,
                     RuleId = rule.Id,
                     Group = rule.App,
-                    DisplayName = target.Description,
+                    DisplayName = displayName,
                     Kind = ItemKind.FileSet,
-                    Path = target.ExpandedPath,
+                    Path = expandedPath,
                     Files = files,
                     SizeBytes = files.Sum(f => f.Size),
                     Risk = target.Risk,
@@ -134,13 +152,13 @@ public sealed class RuleScanner : IScanner
 
             case TargetKind.Directory:
             {
-                if (target.ExpandedPath is null || !Directory.Exists(target.ExpandedPath)) return null;
-                if (PathGuardIsReparse(target.ExpandedPath)) return null;
+                if (expandedPath is null || !Directory.Exists(expandedPath)) return null;
+                if (PathGuardIsReparse(expandedPath)) return null;
 
-                var verdict = ctx.Guard.Check(target.ExpandedPath);
+                var verdict = ctx.Guard.Check(expandedPath);
                 if (!verdict.Allowed) return null;
 
-                var (size, count, last, fingerprint) = ctx.Guard.FingerprintDirectory(target.ExpandedPath, ct);
+                var (size, count, last, fingerprint) = ctx.Guard.FingerprintDirectory(expandedPath, ct);
 
                 return new ScanItem
                 {
@@ -148,9 +166,9 @@ public sealed class RuleScanner : IScanner
                     ModuleId = Id,
                     RuleId = rule.Id,
                     Group = rule.App,
-                    DisplayName = target.Description,
+                    DisplayName = displayName,
                     Kind = ItemKind.Directory,
-                    Path = target.ExpandedPath,
+                    Path = expandedPath,
                     SizeBytes = size,
                     Risk = target.Risk,
                     Description = $"{count:N0} 个文件，整个目录移入隔离区",

@@ -94,7 +94,11 @@ public sealed record RuleTarget(
     IReadOnlyList<string> PreActions,
     string? Command,
     string? Args,
-    int MinAgeDays);
+    int MinAgeDays)
+{
+    /// <summary>路径含通配目录段：ExpandedPath 是展开后的模板（仍含 *），扫描时逐个解析成具体目录。</summary>
+    public bool HasWildcard => RawPath is not null && Safety.PathGuard.HasWildcardSegment(RawPath);
+}
 
 /// <summary>校验通过的规则。</summary>
 public sealed record CleanRule(

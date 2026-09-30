@@ -106,6 +106,361 @@
         { "path": "%AppData%\\Microsoft\\Teams\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
         { "path": "%AppData%\\Microsoft\\Teams", "kind": "directory", "risk": "high", "when": "uninstalled", "description": "Teams 经典版用户数据，应用已卸载" }
       ]
+    },
+    {
+      "id": "slack",
+      "app": "Slack",
+      "publisher": "Slack Technologies",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\slack\\slack.exe" },
+          { "directory": "%AppData%\\Slack" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Slack\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Slack\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Slack\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Slack\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7},
+        { "path": "%AppData%\\Slack\\Service Worker\\CacheStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "网页应用离线缓存" }
+      ]
+    },
+    {
+      "id": "zoom",
+      "app": "Zoom",
+      "publisher": "Zoom Video Communications",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\Zoom\\bin\\Zoom.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Zoom\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "telegram.desktop",
+      "app": "Telegram Desktop",
+      "publisher": "Telegram FZ-LLC",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%AppData%\\Telegram Desktop\\Telegram.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Telegram Desktop\\tdata\\user_data\\cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "文件缓存，清理后已查看的文件需重新下载" },
+        { "path": "%AppData%\\Telegram Desktop\\tdata\\user_data\\media_cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "媒体缓存，清理后图片与视频需重新下载" }
+      ]
+    },
+    {
+      "id": "notion",
+      "app": "Notion",
+      "publisher": "Notion Labs",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Programs\\Notion" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Notion\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Notion\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Notion\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" }
+      ]
+    },
+    {
+      "id": "obsidian",
+      "app": "Obsidian",
+      "publisher": "Dynalist Inc.",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Obsidian" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\obsidian\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\obsidian\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\obsidian\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" }
+      ]
+    },
+    {
+      "id": "postman",
+      "app": "Postman",
+      "publisher": "Postman Inc.",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Postman" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Postman\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Postman\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Postman\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Postman\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "figma",
+      "app": "Figma",
+      "publisher": "Figma Inc.",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Figma" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Figma\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Figma\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Figma\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" }
+      ]
+    },
+    {
+      "id": "cursor",
+      "app": "Cursor",
+      "publisher": "Anysphere",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Programs\\cursor\\Cursor.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Cursor\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "编辑器缓存" },
+        { "path": "%AppData%\\Cursor\\CachedData", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "V8 编译缓存" },
+        { "path": "%AppData%\\Cursor\\CachedExtensionVSIXs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "已下载的扩展安装包" },
+        { "path": "%AppData%\\Cursor\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Cursor\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Cursor\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7},
+        { "path": "%AppData%\\Cursor\\User\\workspaceStorage", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "工作区状态缓存，清理后会丢失未保存的编辑器布局" }
+      ]
+    },
+    {
+      "id": "microsoft.vscode-insiders",
+      "app": "Visual Studio Code Insiders",
+      "publisher": "Microsoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Programs\\Microsoft VS Code Insiders\\Code - Insiders.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Code - Insiders\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "编辑器缓存" },
+        { "path": "%AppData%\\Code - Insiders\\CachedData", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "V8 编译缓存" },
+        { "path": "%AppData%\\Code - Insiders\\CachedExtensionVSIXs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "已下载的扩展安装包" },
+        { "path": "%AppData%\\Code - Insiders\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Code - Insiders\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Code - Insiders\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "epic.games-launcher",
+      "app": "Epic Games Launcher",
+      "publisher": "Epic Games",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\EpicGamesLauncher" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\EpicGamesLauncher\\Saved\\webcache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "启动器网页缓存" },
+        { "path": "%LocalAppData%\\EpicGamesLauncher\\Saved\\webcache_4430", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "启动器网页缓存（新版）" },
+        { "path": "%LocalAppData%\\EpicGamesLauncher\\Saved\\Logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "obs.studio",
+      "app": "OBS Studio",
+      "publisher": "OBS Project",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%AppData%\\obs-studio" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\obs-studio\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7},
+        { "path": "%AppData%\\obs-studio\\crashes", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "崩溃报告" }
+      ]
+    },
+    {
+      "id": "netease.cloudmusic",
+      "app": "网易云音乐",
+      "publisher": "NetEase",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Netease\\CloudMusic" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Netease\\CloudMusic\\Cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "歌曲与图片缓存，清理后已播放歌曲需重新缓冲" }
+      ]
+    },
+    {
+      "id": "microsoft.onedrive",
+      "app": "OneDrive",
+      "publisher": "Microsoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Microsoft\\OneDrive\\OneDrive.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\OneDrive\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "同步客户端日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "github.desktop",
+      "app": "GitHub Desktop",
+      "publisher": "GitHub",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\GitHubDesktop\\GitHubDesktop.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\GitHub Desktop\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\GitHub Desktop\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\GitHub Desktop\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\GitHub Desktop\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "signal.desktop",
+      "app": "Signal",
+      "publisher": "Signal Messenger",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Programs\\signal-desktop\\Signal.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Signal\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Signal\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Signal\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" },
+        { "path": "%AppData%\\Signal\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "bitwarden",
+      "app": "Bitwarden",
+      "publisher": "Bitwarden Inc.",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "file": "%LocalAppData%\\Programs\\Bitwarden\\Bitwarden.exe" }
+        ]
+      },
+      "targets": [
+        { "path": "%AppData%\\Bitwarden\\Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "网页缓存" },
+        { "path": "%AppData%\\Bitwarden\\Code Cache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "脚本编译缓存" },
+        { "path": "%AppData%\\Bitwarden\\GPUCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "GPU 着色器缓存" }
+      ]
+    },
+    {
+      "id": "microsoft.office",
+      "app": "Microsoft Office",
+      "publisher": "Microsoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Microsoft\\Office\\16.0" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Microsoft\\Office\\16.0\\Wef", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Office 加载项网页缓存" },
+        { "path": "%LocalAppData%\\Microsoft\\Office\\16.0\\WebServiceCache", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "Office 联机服务缓存" }
+      ]
+    },
+    {
+      "id": "tencent.wechat",
+      "app": "微信",
+      "publisher": "Tencent",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "registry": "HKCU\\Software\\Tencent\\WeChat" }
+        ]
+      },
+      "targets": [
+        { "path": "%UserProfile%\\Documents\\WeChat Files\\*\\FileStorage\\Cache", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "聊天图片与文件的缩略图 / 预览缓存，清理后需重新加载" },
+        { "path": "%UserProfile%\\Documents\\WeChat Files\\*\\FileStorage\\Temp", "pattern": "*", "recurse": true, "risk": "confirm", "when": "installed", "description": "微信临时文件", "minAgeDays": 1}
+      ]
+    },
+    {
+      "id": "jetbrains.ide",
+      "app": "JetBrains IDE（IntelliJ / PyCharm / Rider / WebStorm 等）",
+      "publisher": "JetBrains",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "registry": "HKCU\\Software\\JetBrains" },
+          { "directory": "%LocalAppData%\\JetBrains\\Toolbox" },
+          { "directory": "%LocalAppData%\\Programs\\IntelliJ IDEA" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\JetBrains\\*\\caches", "kind": "directory", "risk": "confirm", "when": "installed", "description": "项目索引缓存，清理后打开项目重新索引" },
+        { "path": "%LocalAppData%\\JetBrains\\*\\index", "kind": "directory", "risk": "confirm", "when": "installed", "description": "共享索引缓存，清理后重新下载 / 重建" },
+        { "path": "%LocalAppData%\\JetBrains\\*\\log", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7},
+        { "path": "%LocalAppData%\\JetBrains\\*\\tmp", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "临时文件", "minAgeDays": 1}
+      ]
+    },
+    {
+      "id": "google.android-studio",
+      "app": "Android Studio",
+      "publisher": "Google",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Programs\\Android Studio" },
+          { "directory": "%ProgramFiles%\\Android\\Android Studio" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Google\\AndroidStudio*\\caches", "kind": "directory", "risk": "confirm", "when": "installed", "description": "项目索引缓存，清理后打开项目重新索引" },
+        { "path": "%LocalAppData%\\Google\\AndroidStudio*\\log", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7},
+        { "path": "%LocalAppData%\\Google\\AndroidStudio*\\tmp", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "临时文件", "minAgeDays": 1}
+      ]
+    },
+    {
+      "id": "ea.app",
+      "app": "EA app",
+      "publisher": "Electronic Arts",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Electronic Arts\\EA Desktop" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Electronic Arts\\EA Desktop\\Logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
+    },
+    {
+      "id": "ubisoft.connect",
+      "app": "Ubisoft Connect",
+      "publisher": "Ubisoft",
+      "category": "app",
+      "detect": {
+        "anyOf": [
+          { "directory": "%LocalAppData%\\Ubisoft Game Launcher" }
+        ]
+      },
+      "targets": [
+        { "path": "%LocalAppData%\\Ubisoft Game Launcher\\logs", "pattern": "*", "recurse": true, "risk": "safe", "when": "installed", "description": "运行日志", "minAgeDays": 7}
+      ]
     }
   ]
 }

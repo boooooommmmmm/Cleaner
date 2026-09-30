@@ -1,10 +1,10 @@
 {
   "kind": "popups",
-  "version": 2,
-  "generated": "2026-09-30T01:52:12Z",
+  "version": 4,
+  "generated": "2026-09-30T04:21:02Z",
   "files": {
-    "popup-rules.json": "6a1256378096ffd29bc5142c09eddc35f832ce0d8859d3e6185344fd9d08a7e3"
+    "popup-rules.json": "9550be1a8c78d6082fe5ff98b07c61d7400d110c326deba780a196b45d9346ae"
   },
   "keyId": "release-2026-09",
-  "signature": "/Za/aGE2SvLRl9uaZTq3lO3XikC6WV9/5aVYmaOg00V0dO2PC5JF5k0GHMf8Dq5yMwzIUX9cYNCEWxkmpwtTAg=="
+  "signature": "6AVkgng99HJBIrWLGLDh97zIOCJInQx9NScX/9BQw5hzZtPk/byhMYzPQosp6RZAPZ6YXPJ3neEdQz0Uy27spA=="
 }

@@ -5,21 +5,32 @@
       "id": "generic-hot-news",
       "title": "热点资讯类弹窗",
       "processPattern": "^(?!.*(chrome|msedge|firefox|explorer|code|devenv)).*(tips|popup|popwnd|news|hot|toast|notif|push|ad|msg)[^\\\\]*\\.exe$",
-      "titlePattern": "(热点|资讯|今日|头条|优惠|推荐|弹窗|广告|领取|抽奖|红包|限时|活动|特惠)",
+      "titlePattern": "(热点|资讯|今日|头条|优惠|推荐|弹窗|广告|领取|抽奖|红包|限时|活动|特惠|爆款|秒杀|福利|免费领|快讯|新闻|直播|开奖)",
       "note": "进程名带 tips / popup / news / toast 等特征，且标题含营销词。只关窗口，不结束进程。"
     },
     {
       "id": "generic-ad-window-class",
       "title": "广告窗口类名",
       "processPattern": "^(?!.*(chrome|msedge|firefox|explorer|code|devenv)).*\\.exe$",
-      "classPattern": "(AdWnd|AdvertWnd|PopupAdWnd|TipsWnd|NewsPopup|HotNewsWnd|PushWnd)",
+      "classPattern": "(AdWnd|AdvertWnd|PopupAdWnd|TipsWnd|NewsPopup|HotNewsWnd|PushWnd|PromoWnd|ActivityWnd|BubbleTipsWnd|MiniNewsWnd|PopNewsWnd|TipsWindow|AdPopupWnd)",
       "note": "窗口类名直接暴露广告用途的弹窗。"
+    },
+    {
+      "id": "generic-tray-bubble",
+      "title": "托盘气泡式营销弹窗",
+      "processPattern": "^(?!.*(chrome|msedge|firefox|explorer|code|devenv)).*(bubble|tray|mini|desk|assist|helper|daemon|guard)[^\\\\]*\\.exe$",
+      "titlePattern": "(热点|资讯|头条|优惠|推荐|广告|领取|抽奖|红包|限时|活动|特惠|爆款|秒杀|福利|免费领|快讯|直播|开奖)",
+      "note": "常驻托盘 / 助手类进程从右下角弹出的营销气泡：进程名带 bubble / tray / mini / assist 等特征且标题含营销词。只关窗口，不结束进程。"
     }
   ],
   "blockableProcesses": [
-    "HotNewsPopup.exe",
     "AdPopup.exe",
-    "TipsPopup.exe",
-    "NewsPush.exe"
+    "AdTips.exe",
+    "HotNewsPopup.exe",
+    "MiniNews.exe",
+    "NewsPush.exe",
+    "PopNews.exe",
+    "PopupTips.exe",
+    "TipsPopup.exe"
   ]
 }

@@ -19,7 +19,8 @@ public sealed class ReleaseInfoDto
     [JsonPropertyName("signature")] public string? Signature { get; set; }
 }
 
-public sealed record ReleaseInfo(Version Version, string Asset, string Url, string Sha256, long Size, string Notes, string KeyId);
+/// <summary>校验通过的发布信息。Source 是签名原文，下载后原样存到压缩包旁供安装阶段独立复验。</summary>
+public sealed record ReleaseInfo(Version Version, string Asset, string Url, string Sha256, long Size, string Notes, string KeyId, ReleaseInfoDto? Source = null);
 
 /// <summary>
 /// 程序自更新的元数据签名（与数据集签名同一把密钥）：程序没有代码签名证书时，靠这份签名保证下载的压缩包确实是我们发布的。
@@ -91,7 +92,7 @@ public static class ReleaseManifest
             error = "签名验证出错：" + ex.Message;
             return null;
         }
-        return new ReleaseInfo(version, dto.Asset, dto.Url!, dto.Sha256.ToLowerInvariant(), dto.Size, dto.Notes ?? "", dto.KeyId);
+        return new ReleaseInfo(version, dto.Asset, dto.Url!, dto.Sha256.ToLowerInvariant(), dto.Size, dto.Notes ?? "", dto.KeyId, dto);
     }
 
     /// <summary>只比较前三段（Major.Minor.Build）。</summary>
