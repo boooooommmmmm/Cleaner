@@ -1,11 +1,11 @@
 {
-  "version": "0.16.1",
-  "asset": "CleanSweep-win-x64-0.16.1.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.16.1/CleanSweep-win-x64-0.16.1.zip",
-  "sha256": "40cbb56f213ff7e3321326aef151597a0d79de7c7c4be21e90a8a0521abf294b",
-  "size": 63166746,
-  "notes": "v0.16.1：更新来源默认为官方仓库（此前默认空导致从不检查更新），GitHub 直连失败自动改用镜像；卸载程序已不存在的软件可备份后移除登记项",
-  "generated": "2026-09-30T15:47:52Z",
+  "version": "0.16.2",
+  "asset": "CleanSweep-win-x64-0.16.2.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.16.2/CleanSweep-win-x64-0.16.2.zip",
+  "sha256": "f557d374c5e9b75ade3edc234db3b822e2722325eedc484a7cd1fd959ebfa048",
+  "size": 63172759,
+  "notes": "v0.16.2：侧栏按清理 / 空间 / 优化 / 管理分组可折叠，隔离区与设置固定在底部；导航列表可滚动",
+  "generated": "2026-09-30T16:49:09Z",
   "keyId": "release-2026-09",
-  "signature": "2xLENrclZeJKZjNE08OYXuxmN4Z3Hq4nuGI9rwFX8DqLvsjJBlbPDA6bouba80vUWU373Z/+HymcoTQ4CNMz5g=="
+  "signature": "toO73Ka9jfExJSpn0lfa3UGuS8W/GOBpGTiBonRj+VaTlfYcT2/URFHE+awI5WyI1FyfHVABY1JR2MYf2yFhiA=="
 }
