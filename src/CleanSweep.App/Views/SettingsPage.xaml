@@ -212,13 +212,25 @@
                     <CheckBox IsChecked="{Binding CheckUpdatesOnStartup}" Content="启动时检查更新并静默下载，完成后询问是否安装" Margin="0,8,0,0"/>
                     <DockPanel Margin="0,10,0,0">
                         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                            <Button Content="检查程序更新" Command="{Binding CheckAppUpdateCommand}" Margin="8,0,0,0"/>
+                            <Button Content="检查 / 重试更新" Command="{Binding CheckAppUpdateCommand}" Margin="8,0,0,0"/>
+                            <Button Content="取消程序更新" Command="{Binding Updates.CancelCommand}" Margin="8,0,0,0"
+                                    Visibility="{Binding Updates.IsBusy, Converter={StaticResource BoolToVis}}"/>
                             <Button Content="安装已下载更新" Command="{Binding InstallAppUpdateCommand}" Margin="8,0,0,0"/>
                         </StackPanel>
                         <TextBlock Text="{Binding AppVersionText}" VerticalAlignment="Center"/>
                     </DockPanel>
                     <TextBlock Text="{Binding AppUpdateStatus}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0" TextWrapping="Wrap"
                                Visibility="{Binding AppUpdateStatus, Converter={StaticResource NullToVis}}"/>
+                    <StackPanel Margin="0,6,0,0" Visibility="{Binding Updates.IsDownloading, Converter={StaticResource BoolToVis}}">
+                        <ProgressBar Value="{Binding Updates.DownloadPercent}" Maximum="100" Height="6"/>
+                        <TextBlock Text="{Binding Updates.DownloadPercent, StringFormat=下载进度：{0:0}%}" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"/>
+                    </StackPanel>
+                    <TextBlock Text="已完整下载的更新可在重启后恢复；清理等任务运行时会暂缓安装，请结束任务后点击安装。" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,6,0,0"/>
+                    <Expander Header="版本说明" Margin="0,6,0,0" Visibility="{Binding AvailableRelease, Converter={StaticResource NullToVis}}">
+                        <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                            <TextBlock Text="{Binding AvailableRelease.Notes}" TextWrapping="Wrap"/>
+                        </ScrollViewer>
+                    </Expander>
                     <ItemsControl ItemsSource="{Binding RejectedRules}" Margin="0,8,0,0"
                                   Visibility="{Binding RejectedRules.Count, Converter={StaticResource CountToVis}}">
                         <ItemsControl.ItemTemplate>

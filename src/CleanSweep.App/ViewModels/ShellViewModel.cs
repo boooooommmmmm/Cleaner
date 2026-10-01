@@ -75,9 +75,10 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public async Task CheckUpdatesInBackgroundAsync()
     {
-        if (!_s.Settings.CheckUpdatesOnStartup || _s.UpdateSources is null) return;
         try
         {
+            await _s.AppUpdates.RestorePreparedAsync();
+            if (!_s.Settings.CheckUpdatesOnStartup || _s.UpdateSources is null) return;
             await _s.AppUpdates.CheckAndPrepareAsync();
             if (_s.AppUpdates.InstallationStarted) return;
             var data = await _s.UpdateDataSetsAsync();
@@ -170,6 +171,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Add(new NavItem { Group = "空间", Title = "文件粉碎", Glyph = "", Page = new ShredViewModel(s) });
         Add(new NavItem { Title = "隔离区", Glyph = "", Page = new QuarantineViewModel(s) });
         Add(new NavItem { Title = "设置", Glyph = "", Page = new SettingsViewModel(s) });
+        s.UpdateInstallBlocker = () => UpdateInstallGuard.BlockReason(Items);
 
         Items[0].IsSelected = true;
 

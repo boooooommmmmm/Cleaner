@@ -94,6 +94,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private Core.Integrity.ReleaseInfo? _availableRelease;
 
     public string AppVersionText => $"当前版本 {_s.CurrentVersion.ToString(3)}";
+    public AppUpdateCoordinator Updates => _s.AppUpdates;
 
     [ObservableProperty]
     private string _backupSummary = "";

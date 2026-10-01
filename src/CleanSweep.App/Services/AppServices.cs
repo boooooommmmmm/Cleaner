@@ -43,6 +43,8 @@ public sealed class AppServices
     public required AppSettings Settings { get; init; }
 
     private AppUpdateCoordinator? _appUpdates;
+    private readonly SemaphoreSlim _dataUpdateGate = new(1, 1);
+    public Func<string?> UpdateInstallBlocker { get; set; } = () => "界面正在初始化";
     public AppUpdateCoordinator AppUpdates => _appUpdates ??= new AppUpdateCoordinator(
         CheckAppUpdateAsync, (release, progress, ct) => DownloadAppUpdateAsync(release, progress, ct),
         (release, _) =>
@@ -53,7 +55,17 @@ public sealed class AppServices
                 == System.Windows.MessageBoxResult.Yes);
         },
         zip => AppUpdater.LaunchApply(AppContext.BaseDirectory.TrimEnd('\\'), zip),
-        () => System.Windows.Application.Current.Shutdown(0));
+        () => System.Windows.Application.Current.Shutdown(0),
+        restore: RestoreAppUpdateAsync,
+        installBlocker: () => _dataUpdateGate.CurrentCount == 0 ? "规则库正在更新" : UpdateInstallBlocker());
+
+    private Task<PreparedAppUpdate?> RestoreAppUpdateAsync(CancellationToken ct)
+    {
+        var source = UpdateSources?.ReleaseInfoUrl;
+        var version = CurrentVersion;
+        return source is null ? Task.FromResult<PreparedAppUpdate?>(null)
+            : Task.Run(() => new PreparedAppUpdateStore(AppPaths.AppUpdateStagingDir).Load(source, version), ct);
+    }
 
     // M3
     public required AppInventory Inventory { get; init; }
@@ -208,6 +220,13 @@ public sealed class AppServices
     /// <summary>检查并安装三个数据集的在线更新，然后重新加载。返回每个数据集的结果。</summary>
     public async Task<IReadOnlyList<DataUpdateResult>> UpdateDataSetsAsync(CancellationToken ct = default)
     {
+        await _dataUpdateGate.WaitAsync(ct).ConfigureAwait(false);
+        try { return await UpdateDataSetsCoreAsync(ct).ConfigureAwait(false); }
+        finally { _dataUpdateGate.Release(); }
+    }
+
+    private async Task<IReadOnlyList<DataUpdateResult>> UpdateDataSetsCoreAsync(CancellationToken ct)
+    {
         var results = new List<DataUpdateResult>();
         var source = UpdateSources;
         if (source is null) return DataSetStatus.Select(l => new DataUpdateResult(l.Kind, false, null, "未设置更新来源")).ToList();
@@ -253,7 +272,10 @@ public sealed class AppServices
     /// </summary>
     public async Task<string> DownloadAppUpdateAsync(ReleaseInfo release, IProgress<(long Done, long Total)>? progress, CancellationToken ct = default)
     {
+        var source = UpdateSources?.ReleaseInfoUrl;
         var zip = await new AppUpdater().DownloadAsync(release, AppPaths.AppUpdateStagingDir, progress, ct, reuseExisting: true).ConfigureAwait(false);
+        ct.ThrowIfCancellationRequested();
+        if (source is not null) new PreparedAppUpdateStore(AppPaths.AppUpdateStagingDir).Save(source, release);
         Log.Write(null, "app", "download-update", zip, release.Size, true, release.Version.ToString(3));
         return zip;
     }

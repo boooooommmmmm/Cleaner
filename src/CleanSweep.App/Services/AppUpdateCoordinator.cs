@@ -1,5 +1,6 @@
 using CleanSweep.Core.Integrity;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 
 namespace CleanSweep.App.Services;
 
@@ -12,24 +13,76 @@ public sealed partial class AppUpdateCoordinator : ObservableObject
     private readonly Func<string, string?> _launch;
     private readonly Action _shutdown;
     private readonly Func<ReleaseInfo, string, Task<bool>> _validate;
+    private readonly Func<CancellationToken, Task<PreparedAppUpdate?>>? _restore;
+    private readonly Func<string?> _installBlocker;
     private readonly HashSet<string> _prompted = new();
     private string? _zip;
     private int _generation;
     private CancellationTokenSource? _workCancellation;
 
-    [ObservableProperty] private bool _isBusy;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanCancel))]
+    [NotifyCanExecuteChangedFor(nameof(CancelCommand))]
+    private bool _isBusy;
+    [ObservableProperty] private bool _isDownloading;
+    [ObservableProperty] private double _downloadPercent;
     [ObservableProperty] private string _status = "";
     [ObservableProperty] private ReleaseInfo? _readyRelease;
     public bool InstallationStarted { get; private set; }
+    public bool CanCancel => IsBusy && _workCancellation is { IsCancellationRequested: false } && !InstallationStarted;
 
     public AppUpdateCoordinator(Func<CancellationToken, Task<AppUpdateCheck>> check,
         Func<ReleaseInfo, IProgress<(long Done, long Total)>, CancellationToken, Task<string>> download,
         Func<ReleaseInfo, string, Task<bool>> confirm, Func<string, string?> launch, Action shutdown,
-        Func<ReleaseInfo, string, Task<bool>>? validate = null)
+        Func<ReleaseInfo, string, Task<bool>>? validate = null,
+        Func<CancellationToken, Task<PreparedAppUpdate?>>? restore = null, Func<string?>? installBlocker = null)
     {
         _check = check; _download = download; _confirm = confirm; _launch = launch; _shutdown = shutdown;
         _validate = validate ?? ((release, zip) => Task.Run(() =>
             ReleaseManifest.VerifyPreparedAsset(release, zip) is null));
+        _restore = restore;
+        _installBlocker = installBlocker ?? (() => null);
+    }
+
+    [RelayCommand(CanExecute = nameof(CanCancel))]
+    private void Cancel()
+    {
+        if (!CanCancel) return;
+        Status = "正在取消更新操作…";
+        _workCancellation!.Cancel();
+        OnPropertyChanged(nameof(CanCancel));
+        CancelCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>只从磁盘恢复经过校验的已下载更新，不联网、不弹安装确认。</summary>
+    public async Task RestorePreparedAsync(CancellationToken ct = default)
+    {
+        if (_restore is null || IsBusy || InstallationStarted || ReadyRelease is not null) return;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        _workCancellation = cancellation;
+        IsBusy = true;
+        var generation = _generation;
+        try
+        {
+            Status = "正在核对已下载更新…";
+            var prepared = await _restore(cancellation.Token);
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (generation != _generation) return;
+            if (prepared is null) { Status = ""; return; }
+            if (!await _validate(prepared.Release, prepared.Zip))
+            {
+                if (generation == _generation) Status = "下载包已丢失或校验失败，请重新检查更新。";
+                return;
+            }
+            cancellation.Token.ThrowIfCancellationRequested();
+            if (generation != _generation) return;
+            _zip = prepared.Zip;
+            ReadyRelease = prepared.Release;
+            Status = $"已恢复下载的版本 {prepared.Release.Version.ToString(3)}，可在设置中安装。";
+        }
+        catch (OperationCanceledException) { if (generation == _generation) Status = "更新操作已取消。"; }
+        catch (Exception ex) { if (generation == _generation) Status = "恢复已下载更新失败：" + ex.Message; }
+        finally { _workCancellation = null; IsBusy = false; }
     }
 
     public void ResetSource()
@@ -81,13 +134,20 @@ public sealed partial class AppUpdateCoordinator : ObservableObject
                 _zip = null;
                 Status = $"正在后台下载 {release.Version.ToString(3)}…";
                 downloading = true;
+                DownloadPercent = 0;
+                IsDownloading = true;
                 var progress = new Progress<(long Done, long Total)>(p =>
                 {
-                    if (generation == _generation && downloading)
+                    if (generation == _generation && downloading && !ct.IsCancellationRequested)
+                    {
+                        DownloadPercent = p.Total > 0 ? Math.Clamp(p.Done * 100.0 / p.Total, 0, 100) : 0;
                         Status = $"正在后台下载… {p.Done / 1048576.0:0.#} / {p.Total / 1048576.0:0.#} MB";
+                    }
                 });
                 var zip = await _download(release, progress, ct);
                 downloading = false;
+                IsDownloading = false;
+                DownloadPercent = 100;
                 ct.ThrowIfCancellationRequested();
                 if (generation != _generation) return;
                 _zip = zip;
@@ -98,16 +158,20 @@ public sealed partial class AppUpdateCoordinator : ObservableObject
         }
         catch (OperationCanceledException) { if (generation == _generation) Status = "更新下载已取消，可重新检查。"; }
         catch (Exception ex) { if (generation == _generation) Status = "更新检查或下载失败：" + ex.Message; }
-        finally { downloading = false; _workCancellation = null; IsBusy = false; }
+        finally { downloading = false; IsDownloading = false; _workCancellation = null; IsBusy = false; }
     }
 
     public async Task InstallPreparedAsync()
     {
         if (IsBusy || InstallationStarted || ReadyRelease is null || _zip is null) return;
+        using var cancellation = new CancellationTokenSource();
+        _workCancellation = cancellation;
         IsBusy = true;
-        try { await ConfirmAndInstallAsync(_generation); }
-        catch (Exception ex) { Status = "更新失败：" + ex.Message; }
-        finally { IsBusy = false; }
+        var generation = _generation;
+        try { await ConfirmAndInstallAsync(generation, cancellation.Token); }
+        catch (OperationCanceledException) { if (generation == _generation) Status = "更新操作已取消，可稍后安装。"; }
+        catch (Exception ex) { if (generation == _generation) Status = "更新失败：" + ex.Message; }
+        finally { _workCancellation = null; IsBusy = false; }
     }
 
     private async Task ConfirmAndInstallAsync(int generation, CancellationToken ct = default)
@@ -128,16 +192,25 @@ public sealed partial class AppUpdateCoordinator : ObservableObject
             return;
         }
         if (generation != _generation) return;
+        if (InstallationBlocked()) return;
         _prompted.Add(Identity(release));
         var accepted = await _confirm(release, zip);
         ct.ThrowIfCancellationRequested();
         if (generation != _generation) return;
         if (!accepted) { Status = $"新版本 {release.Version.ToString(3)} 已下载，稍后可在设置中安装。"; return; }
+        if (InstallationBlocked()) return;
         Status = "正在启动更新安装…";
         var error = _launch(zip);
         if (error is not null) { Status = "安装未开始：" + error; return; }
         InstallationStarted = true;
         _shutdown();
+    }
+
+    private bool InstallationBlocked()
+    {
+        if (_installBlocker() is not { } reason) return false;
+        Status = $"更新已下载；{reason}。请等待操作结束后在设置中安装。";
+        return true;
     }
 
     private static string Identity(ReleaseInfo release) => $"{release.Version}|{release.Asset}|{release.Sha256}|{release.Url}";
