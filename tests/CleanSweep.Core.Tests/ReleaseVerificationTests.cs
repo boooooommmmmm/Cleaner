@@ -65,7 +65,13 @@ public sealed class ReleaseVerificationTests
         using var p = Process.Start(start)!;
         var output = p.StandardOutput.ReadToEndAsync();
         var errors = p.StandardError.ReadToEndAsync();
-        if (!p.WaitForExit(20_000)) { p.Kill(entireProcessTree: true); throw new TimeoutException("Release verification fixture timed out"); }
+        // Hosted Windows runners can take more than 20 seconds to cold-start PowerShell.
+        // Keep a bounded wait without weakening any source-cleanliness assertions.
+        if (!p.WaitForExit(120_000))
+        {
+            p.Kill(entireProcessTree: true);
+            throw new TimeoutException($"Release verification fixture timed out after 120 seconds: {Path.GetFileName(exe)}");
+        }
         return (p.ExitCode, output.GetAwaiter().GetResult() + errors.GetAwaiter().GetResult());
     }
 }
