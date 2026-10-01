@@ -38,6 +38,12 @@ public sealed class VolumeRow
 {
     public required VolumeInfo Volume { get; init; }
     public string Letter => Volume.Letter;
+    // CommandParameter is object-typed; WPF StringFormat does not format it.
+    public string AnalyzeParameter => $"{Letter}|Analyze";
+    public string OptimizeParameter => $"{Letter}|Optimize";
+    public string RetrimParameter => $"{Letter}|Retrim";
+    public string DefragmentParameter => $"{Letter}|Defragment";
+    public string ScheduleCheckDiskParameter => $"{Letter}|ScheduleCheckDisk";
     public string Label => string.IsNullOrEmpty(Volume.Label) ? "本地磁盘" : Volume.Label;
     public string FileSystem => Volume.FileSystem;
     public string SizeText => $"{Format.Bytes(Volume.SizeBytes - Volume.FreeBytes)} / {Format.Bytes(Volume.SizeBytes)}";
@@ -122,11 +128,18 @@ public sealed partial class DiskViewModel : ObservableObject
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(NotBusy))]
     private async Task RunAsync(string? parameter, CancellationToken ct)
     {
-        if (parameter is null) return;
-        var parts = parameter.Split('|');
-        if (parts.Length != 2 || !Enum.TryParse<DiskHealth.DiskOperation>(parts[1], out var op)) return;
+        var parts = parameter?.Split('|');
+        if (parts is not { Length: 2 } || !Enum.TryParse<DiskHealth.DiskOperation>(parts[1], out var op) || !Enum.IsDefined(op))
+        {
+            Status = "无法执行：磁盘操作参数无效，请刷新磁盘信息后重试。";
+            return;
+        }
         var row = Volumes.FirstOrDefault(v => v.Letter == parts[0]);
-        if (row is null) return;
+        if (row is null)
+        {
+            Status = "无法执行：未找到所选卷，请刷新磁盘信息后重试。";
+            return;
+        }
 
         var cmd = DiskHealth.BuildCommand(op, row.Letter, row.Volume.Media, out var error);
         if (cmd is null)

@@ -200,7 +200,9 @@ public sealed class ElevatedOperations : IElevatedOperations
             {
                 var outcome = report.Outcomes.GetValueOrDefault(item.Id);
                 var state = outcome is null || outcome.Untouched ? StateSkipped : outcome.Failed > 0 ? StateFailed : outcome.Skipped > 0 ? StateSkipped : StateDone;
-                var reason = state == StateDone ? null : report.Failures.FirstOrDefault(f => f.ItemId == item.Id)?.Reason ?? (state == StateSkipped ? "有文件被跳过（已变化或在白名单中）" : null);
+                var reason = state == StateDone ? null : report.Failures.FirstOrDefault(f => f.ItemId == item.Id)?.Reason
+                    ?? report.InUseFiles.FirstOrDefault(f => f.ItemId == item.Id)?.Reason
+                    ?? (state == StateSkipped ? "有文件被跳过（已变化或在白名单中）" : null);
                 results[item.Id] = new ItemResult(item.Id, state, reason);
             }
         }

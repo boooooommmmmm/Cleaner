@@ -110,7 +110,7 @@ public sealed partial class ShellViewModel : ObservableObject
         Add(new NavItem
         {
             Group = "清理", Title = "系统清理", Glyph = "",
-            Page = new CleanPageViewModel(s, "系统清理", "临时文件、日志、更新缓存、回收站等系统垃圾。默认只勾选“安全”级项目。",
+            Page = new CleanPageViewModel(s, "系统清理", "临时文件、日志、更新缓存、回收站等系统垃圾。首次扫描默认只勾选“安全”级项目。",
                 () => new[] { RuleScanner.SystemJunk() }),
         });
         Add(new NavItem

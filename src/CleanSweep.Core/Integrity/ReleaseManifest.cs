@@ -30,6 +30,22 @@ public static class ReleaseManifest
 {
     public const long MaxAssetBytes = 1024L * 1024 * 1024;
 
+    /// <summary>发布前将本地资产与已验签的元数据核对，不解压或执行资产。</summary>
+    public static string? VerifyAsset(ReleaseInfo release, string assetPath)
+    {
+        try
+        {
+            if (!string.Equals(Path.GetFileName(assetPath), release.Asset, StringComparison.Ordinal)) return "资产文件名与发布信息不一致";
+            if (new FileInfo(assetPath).Length != release.Size) return "资产大小与发布信息不一致";
+            return string.Equals(SignedManifest.HashFile(assetPath), release.Sha256, StringComparison.OrdinalIgnoreCase)
+                ? null : "资产哈希与发布信息不一致";
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return "无法读取发布资产：" + ex.Message;
+        }
+    }
+
     public static byte[] Canonical(string version, string asset, string url, string sha256, long size, string generated)
     {
         var sb = new StringBuilder();

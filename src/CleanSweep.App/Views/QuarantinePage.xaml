@@ -17,7 +17,7 @@
 
         <StackPanel Grid.Row="0">
             <TextBlock Text="隔离区" Style="{StaticResource Text.Title}"/>
-            <TextBlock Text="所有被清理的文件都先移到所在磁盘的隔离目录，到期后自动删除。发现误删可随时恢复到原位置。" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
+            <TextBlock Text="这里保存移入隔离区的文件。到期或超过容量上限时可能自动淘汰；未永久删除前可恢复。" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
         </StackPanel>
 
         <!-- 按磁盘概览 -->

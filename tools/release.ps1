@@ -21,10 +21,14 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Parent $PSScriptRoot
 Push-Location $root
 try {
+    $releaseCommit = $null
+    if ($Publish) { $releaseCommit = & (Join-Path $PSScriptRoot 'verify-release-source.ps1') }
     & (Join-Path $PSScriptRoot "publish.ps1") -Rid $Rid
     if ($LASTEXITCODE -ne 0) { throw "publish failed" }
     $exe = "publish/$Rid/CleanSweep.exe"
-    if ($Version -eq "") { $Version = ((Get-Item $exe).VersionInfo.ProductVersion -split "\+")[0] }
+    $builtVersion = ((Get-Item $exe).VersionInfo.ProductVersion -split "\+")[0]
+    if ($Version -eq "") { $Version = $builtVersion }
+    if ([version]$Version -ne [version]$builtVersion) { throw "发布版本 $Version 与程序版本 $builtVersion 不一致" }
     $asset = "CleanSweep-$Rid-$Version.zip"
     $zip = "publish/$asset"
     if (Test-Path $zip) { Remove-Item $zip -Force }
@@ -32,6 +36,8 @@ try {
     $url = "https://github.com/$Repo/releases/download/v$Version/$asset"
     dotnet run --project tools/CleanSweep.SignData -c Release -- sign-release $Version $zip $url release/latest.json $Key $KeyId $Notes
     if ($LASTEXITCODE -ne 0) { throw "sign-release failed" }
+    dotnet run --project tools/CleanSweep.SignData -c Release --no-build -- verify-release release/latest.json $zip
+    if ($LASTEXITCODE -ne 0) { throw "release verification failed" }
     Write-Host ""
     Write-Host "已生成 $zip 与 release/latest.json。"
 
@@ -43,12 +49,9 @@ try {
     }
 
     # ---- -Publish：通过 GitHub REST API 创建 Release 并上传附件 ----
-    if (-not (Test-Path $TokenFile)) { throw "找不到令牌文件 $TokenFile（细粒度令牌，仓库 Contents 读写权限，一行文本）" }
-    $token = (Get-Content $TokenFile -Raw).Trim()
-    if ($token -eq "") { throw "令牌文件为空" }
-
     # 发布信息里的下载地址指向 tag v<版本>，tag 必须打在已经推送的提交上，否则用户看得到新版本却下载不到
-    $sha = (git rev-parse HEAD).Trim()
+    $sha = & (Join-Path $PSScriptRoot 'verify-release-source.ps1')
+    if ($sha -ne $releaseCommit) { throw '构建期间 HEAD 发生变化，请重新发布' }
     # git 把进度信息写到 stderr，$ErrorActionPreference = Stop 下会被当成错误终止，临时放宽并只看退出码
     $prevEap = $ErrorActionPreference
     $ErrorActionPreference = "Continue"
@@ -58,9 +61,9 @@ try {
     if ($fetchExit -ne 0) { throw "git fetch origin $Branch 失败（退出码 $fetchExit）" }
     $remote = (git rev-parse "origin/$Branch").Trim()
     if ($sha -ne $remote) { throw "HEAD（$sha）与 origin/$Branch（$remote）不一致：先把代码推送到 GitHub 再发布" }
-    # 只看已跟踪文件：未跟踪文件不进构建产物，不应阻止发布
-    $dirty = git status --porcelain --untracked-files=no | Where-Object { $_ -notmatch 'release/latest\.json$' }
-    if ($dirty) { throw "已跟踪文件有未提交的改动，先提交并推送：`n$($dirty -join "`n")" }
+    if (-not (Test-Path -LiteralPath $TokenFile)) { throw "找不到令牌文件 $TokenFile" }
+    $token = (Get-Content -LiteralPath $TokenFile -Raw).Trim()
+    if ($token -eq "") { throw "令牌文件为空" }
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $headers = @{

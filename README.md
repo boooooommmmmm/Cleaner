@@ -13,13 +13,13 @@
 | 开发工具缓存（npm、pip、NuGet、Gradle、Maven、Cargo、Go） | 可用 |
 | 开机加速（注册表 Run、启动文件夹、计划任务、服务、商店应用；签名、启动影响、建议；禁用 / 延迟启动 / 删除；开机时间历史） | 可用 |
 | 空间分析（TreeMap、目录占比、最大文件） | 可用 |
-| 重复文件查找（大小分组 → 首尾哈希 → 全量哈希，排除硬链接与云端占位文件） | 可用 |
+| 重复文件查找（大小分组 → 首尾哈希 → 全量哈希，排除硬链接与云端占位文件；整行选择、Ctrl / Shift 多选、Ctrl+A 全选、Esc 清除） | 可用 |
 | 隔离区（30 天可恢复，体积上限，同卷零拷贝；按磁盘概览卡、按盘 / 批次 / 关键字筛选、释放单个磁盘） | 可用 |
 | 注册表自动备份（修改前导出 .reg，可查看、一键还原，自动淘汰） | 可用 |
 | 系统还原点（修改服务前创建，失败时降级并提示） | 可用 |
 | Path Guard 引擎护栏（重解析点、保护路径、规则路径校验） | 可用 |
 | 白名单、操作日志（可导出 CSV）、半完成批次识别 | 可用 |
-| 清理结果页：每项可展开“依据 / 影响 / 恢复方式 / 执行前核对”说明，按名称或路径筛选，风险分布统计 | 可用 |
+| 清理结果页：每项可展开“依据 / 影响 / 恢复方式 / 执行前核对”说明，按名称或路径筛选，风险分布统计，记住上次勾选状态 | 可用 |
 | 已安装软件清单（注册表、应用商店、便携软件、运行进程）与应用指纹库（69 条） | 可用 |
 | 用户目录残留清理（按应用聚合；确认 / 疑似 / 未知三级；多用户与已删除账户；卸载记录定向扫描） | 可用 |
 | 开发者缓存（Gradle / Maven / NuGet / npm / pip / Docker 等只清缓存；闲置 node_modules；conda 环境） | 可用 |
@@ -55,6 +55,22 @@ dotnet test  tests/CleanSweep.Core.Tests
 dotnet run --project src/CleanSweep.App
 ```
 
+### 开发验证与持续集成
+
+新增统一验收入口（Windows PowerShell 5.1 / PowerShell 7 均可），会检查版本一致性、无警告构建、核心与界面模型测试，以及三个数据集和发布信息的公开签名：
+
+```powershell
+powershell -NoProfile -File tools/verify.ps1 -Configuration Release
+# 可选：同时核对本地发布目录的安装清单、二进制版本和 ZIP 的签名/大小/哈希
+powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir publish/win-x64 -ReleaseZip publish/CleanSweep-win-x64-0.18.0.zip
+```
+
+结果保存在 `artifacts/verification/<配置>/`（JSON 摘要和 TRX）。GitHub Actions 对 push / pull_request 使用相同入口运行 Debug、Release，两端均只用公钥验签。验证不读取私钥或发布令牌，不安装服务，也不发布版本；真实管理员/SYSTEM 场景仍需虚拟机验收。
+
+`tools/release.ps1 -Publish` 会在构建前后拒绝未提交或未跟踪文件（仅允许本次生成的 `release/latest.json`），并核对发布版本与二进制版本，防止未跟踪源码混入已提交版本的发布包。
+
+清理页的筛选同时限定本次清理与批量选择范围；隐藏项保留勾选状态，但不参与本次清理。隔离区的“删除过期项”也只处理当前显示范围。
+
 改过 `rules/`、`fingerprints/`、`popups/` 里的任何文件后必须重新签名，否则程序拒绝加载该数据集（测试也会失败）：
 
 ```powershell
@@ -86,8 +102,8 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.17.0"; git push
-# 在 GitHub 创建 tag v0.17.0 的 Release，上传 publish/CleanSweep-win-x64-0.17.0.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.18.0"; git push
+# 在 GitHub 创建 tag v0.18.0 的 Release，上传 publish/CleanSweep-win-x64-0.18.0.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。

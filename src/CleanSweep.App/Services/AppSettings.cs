@@ -1,4 +1,5 @@
 using System.Text.Json;
+using CleanSweep.Core.Model;
 
 namespace CleanSweep.App.Services;
 
@@ -56,6 +57,21 @@ public sealed class AppSettings
     /// <summary>侧栏分组的展开状态（分组名 → 是否展开）；没记录的分组用默认值。</summary>
     public Dictionary<string, bool> NavGroupExpanded { get; set; } = new();
 
+    /// <summary>当前用户各清理条目的上次选择，连同当时的类型和风险级别。</summary>
+    public Dictionary<string, CleaningSelection> CleaningSelections { get; set; } = new();
+
+    private static readonly string SelectionUser = System.Security.Principal.WindowsIdentity.GetCurrent().User?.Value
+        ?? $"{System.Environment.UserDomainName}\\{System.Environment.UserName}";
+
+    private static string SelectionKey(ScanItem item) => JsonSerializer.Serialize(new[] { SelectionUser, item.ModuleId, item.Id });
+
+    public bool CleaningSelectionFor(ScanItem item) =>
+        CleaningSelections.TryGetValue(SelectionKey(item), out var saved) && saved is not null
+        && saved.Kind == item.Kind && saved.Risk == item.Risk ? saved.Selected : item.DefaultSelected;
+
+    public void RememberCleaningSelection(ScanItem item, bool selected) =>
+        CleaningSelections[SelectionKey(item)] = new CleaningSelection(selected, item.Kind, item.Risk);
+
     /// <summary>硬件状态页"自动刷新"开关。</summary>
     public bool HardwareAutoRefresh { get; set; }
 
@@ -83,6 +99,9 @@ public sealed class AppSettings
         UpdateSource = (UpdateSource ?? "").Trim();
         if (UpdateSource.Length == 0) UpdateSource = Core.Integrity.UpdateSources.Default;
         NavGroupExpanded ??= new();
+        CleaningSelections = (CleaningSelections ?? new()).Where(p => p.Value is not null
+            && Enum.IsDefined(p.Value.Kind) && Enum.IsDefined(p.Value.Risk))
+            .ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
         DevProjectRoots = (DevProjectRoots ?? new()).Where(r => !string.IsNullOrWhiteSpace(r)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (RetentionDays is < 1 or > 365) RetentionDays = 30;
         if (DuplicateMinSizeMb is < 0 or > 1_000_000) DuplicateMinSizeMb = 1;
@@ -107,3 +126,5 @@ public sealed class AppSettings
         }
     }
 }
+
+public sealed record CleaningSelection(bool Selected, ItemKind Kind, RiskLevel Risk);

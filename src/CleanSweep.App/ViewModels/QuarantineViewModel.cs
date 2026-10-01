@@ -231,6 +231,7 @@ public sealed partial class QuarantineViewModel : ObservableObject
     private async Task RestoreAsync(QuarantineRow? row)
     {
         if (row is null) return;
+        IsBusy = true;
         try
         {
             var target = await WithServiceFallbackAsync(() => _s.Quarantine.Restore(row.Entry.Id), ElevatedOperation.RestoreQuarantineItem, row.Entry);
@@ -242,7 +243,11 @@ public sealed partial class QuarantineViewModel : ObservableObject
             _s.Log.Write(null, row.Entry.ModuleId, "restore", row.Entry.OriginalPath, 0, false, ex.Message);
             MessageBox.Show($"恢复失败：{ex.Message}" + ElevationAdvice(ex), "隔离区", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        Refresh();
+        finally
+        {
+            IsBusy = false;
+            Refresh();
+        }
     }
 
     private string ElevationAdvice(Exception ex) =>
@@ -270,6 +275,7 @@ public sealed partial class QuarantineViewModel : ObservableObject
         if (row is null) return;
         if (MessageBox.Show($"永久删除“{row.Name}”？此操作不可恢复。", "隔离区", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
 
+        IsBusy = true;
         try
         {
             await WithServiceFallbackAsync(() => { _s.Quarantine.Purge(row.Entry.Id); return null; }, ElevatedOperation.PurgeQuarantineItem, row.Entry);
@@ -281,7 +287,11 @@ public sealed partial class QuarantineViewModel : ObservableObject
             _s.Log.Write(null, row.Entry.ModuleId, "purge", row.Entry.OriginalPath, 0, false, ex.Message);
             MessageBox.Show($"删除失败：{ex.Message}\n\n该项仍保留在隔离区。" + ElevationAdvice(ex), "隔离区", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-        Refresh();
+        finally
+        {
+            IsBusy = false;
+            Refresh();
+        }
     }
 
     /// <summary>"清空隔离区"作用于当前显示的项：有筛选时只删筛选结果。</summary>
@@ -317,21 +327,18 @@ public sealed partial class QuarantineViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(NotBusy))]
     private async Task PurgeExpiredAsync()
     {
-        IsBusy = true;
-        try
+        var now = DateTime.UtcNow;
+        var rows = Rows.Where(row => row.Entry.ExpiresUtc <= now).ToList();
+        if (rows.Count == 0)
         {
-            var n = await Task.Run(() =>
-            {
-                using var bulk = _s.Quarantine.BeginBulk();
-                return _s.Quarantine.PurgeExpired();
-            });
-            Status = n == 0 ? "没有过期项。" : $"已删除 {n:N0} 个过期项。";
+            Status = "当前显示范围内没有过期项。";
+            return;
         }
-        finally
-        {
-            IsBusy = false;
-            Refresh();
-        }
+        var scope = IsFiltered ? "当前筛选结果内" : "隔离区内";
+        if (MessageBox.Show($"永久删除{scope}已到期的 {rows.Count:N0} 项？此操作不可恢复。",
+                "删除过期项", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
+        await RunBulkAsync("正在删除过期项", rows, row => _s.Quarantine.Purge(row.Entry.Id),
+            ElevatedOperation.PurgeQuarantineItem, "已删除过期项");
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Windows;
 using CleanSweep.App.Helpers;
@@ -69,9 +70,11 @@ public sealed partial class DuplicatesViewModel : ObservableObject
 
     public ObservableCollection<string> Roots { get; } = new();
     public ObservableCollection<DuplicateGroupViewModel> Groups { get; } = new();
+    public ObservableCollection<DuplicateFileViewModel> FileRows { get; } = new();
+    private readonly HashSet<DuplicateGroupViewModel> _observedGroups = new();
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(FindCommand), nameof(QuarantineSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(FindCommand), nameof(QuarantineSelectedCommand), nameof(KeepOldestInAllGroupsCommand), nameof(ClearSelectionCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -90,20 +93,60 @@ public sealed partial class DuplicatesViewModel : ObservableObject
     [ObservableProperty]
     private string? _selectedRoot;
 
-    public DuplicatesViewModel(AppServices s)
+    public DuplicatesViewModel(AppServices s) : this(s, s.Settings, s.Env.Variables["UserProfile"]) { }
+
+    internal DuplicatesViewModel(AppServices s, AppSettings settings, string userProfile)
     {
         _s = s;
-        _minSizeMb = Math.Max(0, s.Settings.DuplicateMinSizeMb);
-        foreach (var r in s.Settings.DuplicateRoots.Where(Directory.Exists)) Roots.Add(r);
+        Groups.CollectionChanged += OnGroupsChanged;
+        _minSizeMb = Math.Max(0, settings.DuplicateMinSizeMb);
+        foreach (var r in settings.DuplicateRoots.Where(Directory.Exists)) Roots.Add(r);
         if (Roots.Count == 0)
         {
-            var profile = s.Env.Variables["UserProfile"];
+            var profile = userProfile;
             foreach (var sub in new[] { "Downloads", "Documents", "Pictures", "Videos", "Desktop" })
             {
                 var p = Path.Combine(profile, sub);
                 if (Directory.Exists(p)) Roots.Add(p);
             }
         }
+    }
+
+    private void OnGroupsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var group in _observedGroups.Where(g => !Groups.Contains(g)).ToArray())
+        {
+            group.SelectionChanged -= OnSelectionChanged;
+            group.Files.CollectionChanged -= OnFilesChanged;
+            _observedGroups.Remove(group);
+        }
+        foreach (var group in Groups.Where(g => !_observedGroups.Contains(g)))
+        {
+            group.SelectionChanged += OnSelectionChanged;
+            group.Files.CollectionChanged += OnFilesChanged;
+            _observedGroups.Add(group);
+        }
+        RefreshFileRows();
+    }
+
+    private void OnSelectionChanged(object? sender, EventArgs e) => UpdateSelected();
+    private void OnFilesChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshFileRows();
+
+    private void RefreshFileRows()
+    {
+        // Keep surviving row objects and their selection when individual copies are removed.
+        var desired = Groups.SelectMany(g => g.Files).ToList();
+        var remaining = desired.ToHashSet();
+        for (var i = FileRows.Count - 1; i >= 0; i--)
+            if (!remaining.Contains(FileRows[i])) FileRows.RemoveAt(i);
+        for (var i = 0; i < desired.Count; i++)
+        {
+            if (i < FileRows.Count && ReferenceEquals(FileRows[i], desired[i])) continue;
+            var oldIndex = FileRows.IndexOf(desired[i]);
+            if (oldIndex >= 0) FileRows.Move(oldIndex, i);
+            else FileRows.Insert(i, desired[i]);
+        }
+        UpdateSelected();
     }
 
     private bool CanFind => !IsBusy && Roots.Count > 0;
@@ -126,7 +169,6 @@ public sealed partial class DuplicatesViewModel : ObservableObject
             foreach (var g in groups)
             {
                 var vm = new DuplicateGroupViewModel(g);
-                vm.SelectionChanged += (_, _) => UpdateSelected();
                 Groups.Add(vm);
             }
             Summary = $"{Groups.Count} 组重复文件，共可释放 {Format.Bytes(groups.Sum(g => g.ReclaimableBytes))}";
@@ -147,21 +189,24 @@ public sealed partial class DuplicatesViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    private bool CanChangeSelection => !IsBusy;
+
+    [RelayCommand(CanExecute = nameof(CanChangeSelection))]
     private void KeepOldestInAllGroups()
     {
         foreach (var g in Groups) g.SelectAllButOldest();
         UpdateSelected();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanChangeSelection))]
     private void ClearSelection()
     {
         foreach (var f in Groups.SelectMany(g => g.Files)) f.IsSelected = false;
         UpdateSelected();
     }
 
-    private bool CanQuarantine => !IsBusy && Groups.Any(g => g.SelectedCount > 0);
+    private bool CanQuarantine => !IsBusy && Groups.Any(g => g.SelectedCount > 0)
+        && !Groups.Any(g => g.Files.Count > 0 && g.SelectedCount == g.Files.Count);
 
     [RelayCommand(CanExecute = nameof(CanQuarantine))]
     private async Task QuarantineSelectedAsync()
@@ -284,6 +329,8 @@ public sealed partial class DuplicatesViewModel : ObservableObject
     {
         var files = Groups.SelectMany(g => g.Files).Where(f => f.IsSelected).ToList();
         SelectedText = files.Count == 0 ? "未选择任何副本" : $"已选择 {files.Count} 个副本，{Format.Bytes(files.Sum(f => f.Entry.Size))}";
+        var fullySelected = Groups.Count(g => g.Files.Count > 0 && g.SelectedCount == g.Files.Count);
+        if (fullySelected > 0) SelectedText += $"；{fullySelected} 组已全选，请每组至少取消一份以保留。";
         QuarantineSelectedCommand.NotifyCanExecuteChanged();
     }
 

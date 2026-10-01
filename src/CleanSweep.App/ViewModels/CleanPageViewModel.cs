@@ -16,6 +16,10 @@ public sealed partial class CleanPageViewModel : ObservableObject
     private readonly AppServices _s;
     private readonly Func<IScanner[]> _scanners;
     private readonly Func<string?>? _postScanNote;
+    private readonly Dictionary<ScanGroupViewModel, CleanSelectionTracker> _selectionTrackers = new();
+
+    [ObservableProperty]
+    private string? _selectionSaveError;
 
     public string Title { get; }
     public string Subtitle { get; }
@@ -29,7 +33,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     public event EventHandler? ScanCompleted;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(CleanCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(CleanCommand), nameof(SelectSafeOnlyCommand), nameof(SelectNoneCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -58,7 +62,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [ObservableProperty]
     private string _problemTitle = "";
 
-    /// <summary>结果筛选关键字（名称 / 说明 / 路径），只影响显示。</summary>
+    /// <summary>结果筛选关键字；本次清理只处理筛选后可见的已选项。</summary>
     [ObservableProperty]
     private string _filterText = "";
 
@@ -66,14 +70,34 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [ObservableProperty]
     private string _riskSummary = "";
 
-    public CleanPageViewModel(AppServices s, string title, string subtitle, Func<IScanner[]> scanners, Func<string?>? postScanNote = null)
+    public CleanPageViewModel(AppServices s, string title, string subtitle, Func<IScanner[]> scanners, Func<string?>? postScanNote = null,
+        AppSettings? selectionSettings = null)
     {
         _s = s;
         Title = title;
         Subtitle = subtitle;
         _scanners = scanners;
         _postScanNote = postScanNote;
+        var settings = selectionSettings ?? s?.Settings;
+        Groups.CollectionChanged += (_, _) =>
+        {
+            foreach (var removed in _selectionTrackers.Keys.Where(g => !Groups.Contains(g)).ToArray())
+            {
+                _selectionTrackers[removed].Dispose();
+                removed.SelectionChanged -= OnGroupSelectionChanged;
+                _selectionTrackers.Remove(removed);
+            }
+            if (settings is null) return;
+            foreach (var added in Groups.Where(g => !_selectionTrackers.ContainsKey(g)))
+            {
+                _selectionTrackers.Add(added, new CleanSelectionTracker(added, settings, () => !IsBusy,
+                    error => SelectionSaveError = error));
+                added.SelectionChanged += OnGroupSelectionChanged;
+            }
+        };
     }
+
+    private void OnGroupSelectionChanged(object? sender, EventArgs e) => UpdateTotals();
 
     private bool CanScan => !IsBusy;
 
@@ -111,10 +135,10 @@ public sealed partial class CleanPageViewModel : ObservableObject
                     else if (elevation.ViaService(i)) viaService++;
                     return new ScanItemViewModel(i, can, hint, Explain);
                 }));
-                group.SelectionChanged += (_, _) => UpdateTotals();
                 // 条目很多的分组（如 MUI 缓存孤儿）默认折叠，避免淹没其他分组
                 if (group.Items.Count > 30) group.IsExpanded = false;
                 Groups.Add(group);
+                group.ApplyFilter(FilterText);
             }
 
             HasResults = Groups.Count > 0;
@@ -149,6 +173,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     partial void OnFilterTextChanged(string value)
     {
         foreach (var g in Groups) g.ApplyFilter(value);
+        UpdateTotals();
     }
 
     [RelayCommand]
@@ -165,7 +190,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanClean))]
     private async Task CleanAsync(CancellationToken ct)
     {
-        var selected = Groups.SelectMany(g => g.Items).Where(i => i.IsSelected && i.CanSelect).ToList();
+        var selected = Groups.SelectMany(g => g.SelectedVisibleItems).ToList();
         if (selected.Count == 0) return;
 
         var serviceItems = selected.Where(i => _s.Elevation.ViaService(i.Item)).ToList();
@@ -178,7 +203,8 @@ public sealed partial class CleanPageViewModel : ObservableObject
         var fileLike = selected.Count - registryLike - commands - (recycle ? 1 : 0);
 
         var msg = $"将清理 {selected.Count} 项，约 {Format.Bytes(selected.Sum(i => i.SizeBytes))}。";
-        if (fileLike > 0) msg += $"\n\n文件会先移入隔离区，保留 {_s.Settings.RetentionDays} 天，可随时恢复。";
+        if (!string.IsNullOrWhiteSpace(FilterText)) msg += "\n\n仅处理当前筛选结果中的已选项目，隐藏项目本次不处理。";
+        if (fileLike > 0) msg += $"\n\n文件会先移入隔离区，默认保留 {_s.Settings.RetentionDays} 天；超过容量上限可能提前淘汰，未永久删除前可恢复。";
         if (registryLike > 0) msg += $"\n\n{registryLike} 项为注册表值 / 键、服务或计划任务：不经过隔离区，删除前自动备份（.reg / 任务 XML），可在“设置 → 备份与还原”中还原。";
         if (risky > 0) msg += $"\n\n注意：其中 {risky} 项为“建议确认”或“高风险”级别，请确认已阅读说明。";
         if (recycle) msg += "\n\n注意：清空回收站不经过隔离区，不可恢复。";
@@ -287,14 +313,14 @@ public sealed partial class CleanPageViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanScan))]
     private void SelectSafeOnly()
     {
-        foreach (var i in Groups.SelectMany(g => g.Items)) i.IsSelected = i.Risk == RiskLevel.Safe && i.CanSelect;
+        foreach (var g in Groups) g.SelectSafeOnly();
         UpdateTotals();
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanScan))]
     private void SelectNone()
     {
         foreach (var g in Groups) g.IsChecked = false;
@@ -321,6 +347,8 @@ public sealed partial class CleanPageViewModel : ObservableObject
         TotalText = Format.Bytes(Groups.Sum(g => g.TotalBytes));
         var count = Groups.Sum(g => g.SelectedCount);
         SelectedText = count == 0 ? "未选择任何项目" : $"已选择 {count} 项，{Format.Bytes(Groups.Sum(g => g.SelectedBytes))}";
+        var hidden = Groups.Sum(g => g.Items.Count(i => !i.IsVisible && i.IsSelected && i.CanSelect));
+        if (hidden > 0) SelectedText += $"（筛选外 {hidden} 项本次不处理）";
         var parts = new List<string>();
         foreach (var (risk, label) in new[] { (RiskLevel.Safe, "安全"), (RiskLevel.Confirm, "建议确认"), (RiskLevel.High, "高风险"), (RiskLevel.NotRecommended, "不建议") })
         {

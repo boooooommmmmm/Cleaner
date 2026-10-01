@@ -84,23 +84,23 @@
                                         <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                                             <Button Content="分析" Style="{StaticResource Button.Link}" Visibility="{Binding IsFixed, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Analyze"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                                <Button.CommandParameter><Binding Path="AnalyzeParameter"/></Button.CommandParameter>
                                             </Button>
                                             <Button Content="优化" Style="{StaticResource Button.Link}" Visibility="{Binding IsFixed, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Optimize"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                                <Button.CommandParameter><Binding Path="OptimizeParameter"/></Button.CommandParameter>
                                             </Button>
                                             <Button Content="重新修剪" Style="{StaticResource Button.Link}" Visibility="{Binding CanRetrim, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Retrim"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                                <Button.CommandParameter><Binding Path="RetrimParameter"/></Button.CommandParameter>
                                             </Button>
                                             <Button Content="碎片整理" Style="{StaticResource Button.Link}" Visibility="{Binding CanDefragment, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|Defragment"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                                <Button.CommandParameter><Binding Path="DefragmentParameter"/></Button.CommandParameter>
                                             </Button>
                                             <Button Content="计划检查磁盘" Style="{StaticResource Button.Link}" Visibility="{Binding IsNtfs, Converter={StaticResource BoolToVis}}"
                                                     Command="{Binding DataContext.RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}">
-                                                <Button.CommandParameter><MultiBinding StringFormat="{}{0}|ScheduleCheckDisk"><Binding Path="Letter"/></MultiBinding></Button.CommandParameter>
+                                                <Button.CommandParameter><Binding Path="ScheduleCheckDiskParameter"/></Button.CommandParameter>
                                             </Button>
                                         </StackPanel>
                                     </Grid>

@@ -56,8 +56,8 @@ public static class ItemExplanation
         {
             RiskLevel.Safe when item.Kind is ItemKind.RecycleBin => "回收站里是你已经删除的内容，清空后不再占用空间。",
             RiskLevel.Safe when item.Kind is ItemKind.Command => "由系统命令按微软自己的规则处理，不影响已安装的程序；执行需要几分钟。",
-            RiskLevel.Safe when item.IsRegistryLike => "已失效的登记项，删除后不影响现有程序与系统功能。",
-            RiskLevel.Safe => "缓存、临时或已失效的数据，程序需要时会重新生成，不影响设置与个人文件。",
+            RiskLevel.Safe when item.IsRegistryLike => "扫描时判定为失效登记项，执行前仍需核对其内容与删除依据。",
+            RiskLevel.Safe => "按当前规则判为安全，具体用途以条目说明为准。缓存通常会重新生成；残留配置、日志或历史记录不会因此自动恢复。",
             RiskLevel.Confirm => "可能包含你还会用到的记录、设置或存档，清理前请确认不再需要。",
             RiskLevel.High => "可能影响程序或系统功能，只有确定不再需要时才清理。",
             RiskLevel.NotRecommended => "一般不建议清理，收益很小或有副作用。",
@@ -79,14 +79,14 @@ public static class ItemExplanation
                 {
                     try { where = quarantineRootOf(p); } catch { }
                 }
-                return $"先移入 {where}，保留 {retentionDays} 天，期间可在“隔离区”页恢复到原位置；到期后自动删除。";
+                return $"先移入 {where}，默认保留 {retentionDays} 天；未被永久删除前可在“隔离区”页恢复。到期或超过隔离区容量上限时可能被自动淘汰。";
             }
             case ItemKind.RecycleBin:
                 return "不经过隔离区，清空后不可恢复。";
             case ItemKind.Command:
                 return "系统命令执行后不可撤销。";
             case ItemKind.RegistryValue:
-                return "删除前先把所在键导出为 .reg 备份，可在“设置 → 备份与还原”中一键还原。";
+                return "删除前为该值保存 .reg 备份，可在“设置 → 备份与还原”中还原该值。";
             case ItemKind.RegistryKey:
                 return "删除前先把整个键导出为 .reg 备份，可在“设置 → 备份与还原”中一键还原。";
             case ItemKind.Service:

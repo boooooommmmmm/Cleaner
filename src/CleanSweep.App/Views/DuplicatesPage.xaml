@@ -6,6 +6,13 @@
              xmlns:vm="clr-namespace:CleanSweep.App.ViewModels"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:DuplicatesViewModel}">
+    <UserControl.Resources>
+        <CollectionViewSource x:Key="GroupedFiles" Source="{Binding FileRows}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Group"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
+    </UserControl.Resources>
     <Grid Margin="28,24,28,20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -70,51 +77,80 @@
         <Border Grid.Row="2" Style="{StaticResource Card}" Padding="0">
             <Grid>
                 <DockPanel>
-                    <Grid DockPanel.Dock="Top" Margin="12,8" Visibility="{Binding Groups.Count, Converter={StaticResource CountToVis}}">
-                        <StackPanel Orientation="Horizontal">
+                    <StackPanel DockPanel.Dock="Top" Margin="12,8" Visibility="{Binding Groups.Count, Converter={StaticResource CountToVis}}">
+                        <WrapPanel>
                             <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" VerticalAlignment="Center"/>
                             <Button Content="每组保留最早的一份" Style="{StaticResource Button.Link}" Command="{Binding KeepOldestInAllGroupsCommand}" Margin="16,0,0,0"/>
                             <Button Content="清除选择" Style="{StaticResource Button.Link}" Command="{Binding ClearSelectionCommand}"/>
-                        </StackPanel>
-                        <TextBlock Text="{Binding SelectedText}" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                    </Grid>
-                    <ScrollViewer VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Groups}" Margin="8,0,8,8">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type vm:DuplicateGroupViewModel}">
-                                    <Border BorderBrush="{StaticResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,4">
-                                        <StackPanel>
-                                            <Grid>
-                                                <TextBlock Text="{Binding Title}" FontWeight="SemiBold"/>
-                                                <TextBlock Text="{Binding SizeText}" HorizontalAlignment="Right" Style="{StaticResource Text.Secondary}"/>
-                                            </Grid>
-                                            <ItemsControl ItemsSource="{Binding Files}" Margin="0,6,0,0">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate DataType="{x:Type vm:DuplicateFileViewModel}">
-                                                        <Grid Margin="0,2">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                                <ColumnDefinition Width="*"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                                <ColumnDefinition Width="Auto"/>
-                                                            </Grid.ColumnDefinitions>
-                                                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalAlignment="Center" Margin="0,0,10,0"
-                                                                      IsEnabled="{Binding DataContext.IsBusy, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource Not}}"/>
-                                                            <TextBlock Grid.Column="1" Text="{Binding Entry.Path}" VerticalAlignment="Center" ToolTip="{Binding Entry.Path}"/>
-                                                            <TextBlock Grid.Column="2" Text="{Binding ModifiedText}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="12,0"/>
-                                                            <Button Grid.Column="3" Content="打开位置" Style="{StaticResource Button.Link}"
-                                                                    Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                                                                    CommandParameter="{Binding}"/>
-                                                        </Grid>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                        </WrapPanel>
+                        <TextBlock Text="{Binding SelectedText}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <TextBlock DockPanel.Dock="Top" Margin="12,0,12,8" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"
+                               Text="单击选中一行；Ctrl 点击追加或取消；Shift 点击连续选择；Ctrl+A 全选；Esc 清除。选中行就是待移入隔离区的副本，每组至少保留一份。"/>
+                    <ListBox x:Name="FilesList" ItemsSource="{Binding Source={StaticResource GroupedFiles}}" SelectionMode="Extended"
+                             Margin="8,0,8,8" BorderThickness="0" Background="Transparent" HorizontalContentAlignment="Stretch"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled" ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.CanContentScroll="False" VirtualizingPanel.IsVirtualizing="False"
+                             IsEnabled="{Binding IsBusy, Converter={StaticResource Not}}" PreviewKeyDown="FilesList_PreviewKeyDown"
+                             AutomationProperties.Name="重复文件列表">
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="Padding" Value="8,5"/>
+                                <Setter Property="Margin" Value="4,1"/>
+                                <Setter Property="Background" Value="Transparent"/>
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Entry.Path}"/>
+                                <Setter Property="Template">
+                                    <Setter.Value>
+                                        <ControlTemplate TargetType="ListBoxItem">
+                                            <Border x:Name="RowBorder" Background="{TemplateBinding Background}" CornerRadius="4"
+                                                    BorderBrush="Transparent" BorderThickness="1" Padding="{TemplateBinding Padding}">
+                                                <ContentPresenter HorizontalAlignment="Stretch"/>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="RowBorder" Property="Background" Value="#F0F5FA"/></Trigger>
+                                                <Trigger Property="IsSelected" Value="True"><Setter TargetName="RowBorder" Property="Background" Value="#DCEEFF"/></Trigger>
+                                                <Trigger Property="IsKeyboardFocusWithin" Value="True"><Setter TargetName="RowBorder" Property="BorderBrush" Value="{StaticResource Brush.Accent}"/></Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </Setter.Value>
+                                </Setter>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.GroupStyle>
+                            <GroupStyle>
+                                <GroupStyle.HeaderTemplate>
+                                    <DataTemplate>
+                                        <Grid Margin="8,12,8,6">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Name.Title}" FontWeight="SemiBold"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name.SizeText}" Style="{StaticResource Text.Secondary}" Margin="12,0,0,0"/>
+                                        </Grid>
+                                    </DataTemplate>
+                                </GroupStyle.HeaderTemplate>
+                            </GroupStyle>
+                        </ListBox.GroupStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:DuplicateFileViewModel}">
+                                <Grid Background="Transparent">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected, Mode=TwoWay}" VerticalAlignment="Center" Margin="0,0,10,0"
+                                              Focusable="False" AutomationProperties.Name="{Binding Entry.Path}"/>
+                                    <TextBlock Grid.Column="1" Text="{Binding Entry.Path}" VerticalAlignment="Center" ToolTip="{Binding Entry.Path}"/>
+                                    <TextBlock Grid.Column="2" Text="{Binding ModifiedText}" Style="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="12,0"/>
+                                    <Button Grid.Column="3" Content="打开位置" Style="{StaticResource Button.Link}"
+                                            Command="{Binding DataContext.OpenFileCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
                 </DockPanel>
 
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"

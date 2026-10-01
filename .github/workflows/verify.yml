@@ -1,0 +1,39 @@
+name: Windows verification
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build, test and verify public signatures
+        shell: pwsh
+        run: ./tools/verify.ps1 -Configuration '${{ matrix.configuration }}'
+      - name: Save verification results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: verification-${{ matrix.configuration }}
+          path: artifacts/verification/${{ matrix.configuration }}/
+          retention-days: 14

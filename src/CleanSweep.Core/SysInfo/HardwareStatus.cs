@@ -76,7 +76,7 @@ public static class HardwareStatus
             Add(GroupMemory, "已提交（含页面文件）", $"{Gb(commitUsed)} / {Gb(mem.CommitLimit)} GB", cpct, cpct >= 90);
         }
         var diag = CachedMemoryDiagnostic();
-        Add(GroupMemory, "上次内存诊断", diag ?? "没有找到 Windows 内存诊断的结果记录。可在下方“系统工具”中运行内存诊断（需要重启）。", warn: diag is not null && diag.Contains("错误"));
+        Add(GroupMemory, "上次内存诊断", diag?.Text ?? "没有找到 Windows 内存诊断的结果记录。可在下方“系统工具”中运行内存诊断（需要重启）。", warn: diag?.HasErrors == true);
 
         // 温度与风扇：ACPI 温区（部分机器、多数需要管理员）；Win32_Fan 只有极少数主板上报
         int zones = 0;
@@ -116,7 +116,7 @@ public static class HardwareStatus
             Wmi("SELECT Name, DesiredSpeed, Status, ActiveCooling FROM Win32_Fan", o =>
             {
                 var speed = ToLong(o["DesiredSpeed"]);
-                Add(GroupThermal, o["Name"]?.ToString() ?? "风扇", speed is { } s && s > 0 ? $"{s} RPM · {o["Status"]}" : $"{o["Status"]}");
+                Add(GroupThermal, o["Name"]?.ToString() ?? "风扇", speed is { } s && s > 0 ? $"目标转速 {s} RPM（非实测） · {o["Status"]}" : $"实际转速未提供 · {o["Status"]}");
                 fans++;
             });
             if (fans == 0) _noFans = true;
@@ -258,22 +258,38 @@ public static class HardwareStatus
 
     private static string Gb(long bytes) => (bytes / (1024.0 * 1024 * 1024)).ToString("0.#", CultureInfo.InvariantCulture);
 
-    private static (DateTime AtUtc, string? Text) _diagCache;
+    public sealed record MemoryDiagnostic(string Text, bool HasErrors);
+
+    private static (DateTime AtUtc, MemoryDiagnostic? Result) _diagCache;
 
     /// <summary>事件日志查询每次几十毫秒，自动刷新时没必要 2 秒读一次：结果缓存 60 秒。</summary>
-    private static string? CachedMemoryDiagnostic()
+    private static MemoryDiagnostic? CachedMemoryDiagnostic()
     {
         lock (Gate)
         {
-            if (DateTime.UtcNow - _diagCache.AtUtc < TimeSpan.FromSeconds(60)) return _diagCache.Text;
+            if (DateTime.UtcNow - _diagCache.AtUtc < TimeSpan.FromSeconds(60)) return _diagCache.Result;
         }
-        var text = LastMemoryDiagnostic();
+        var text = ReadMemoryDiagnostic();
         lock (Gate) _diagCache = (DateTime.UtcNow, text);
         return text;
     }
 
     /// <summary>系统日志里 Windows 内存诊断（mdsched）最近一次的结果：事件 1201 无错误、1202 检测到错误。</summary>
     public static string? LastMemoryDiagnostic()
+        => ReadMemoryDiagnostic()?.Text;
+
+    internal static MemoryDiagnostic? DescribeMemoryDiagnostic(int eventId, DateTime? timeCreated)
+    {
+        var when = timeCreated?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "";
+        return eventId switch
+        {
+            1201 => new($"{when}：未检测到错误。", false),
+            1202 => new($"{when}：检测到内存错误！建议更换内存条或逐条排查。", true),
+            _ => null,
+        };
+    }
+
+    private static MemoryDiagnostic? ReadMemoryDiagnostic()
     {
         try
         {
@@ -282,8 +298,7 @@ public static class HardwareStatus
             using var reader = new EventLogReader(query);
             using var ev = reader.ReadEvent();
             if (ev is null) return null;
-            var when = ev.TimeCreated?.ToLocalTime().ToString("yyyy-MM-dd HH:mm") ?? "";
-            return ev.Id == 1202 ? $"{when}：检测到内存错误！建议更换内存条或逐条排查。" : $"{when}：未检测到错误。";
+            return DescribeMemoryDiagnostic(ev.Id, ev.TimeCreated);
         }
         catch
         {

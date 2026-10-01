@@ -8,6 +8,7 @@
     <Project Path="tools/CleanSweep.SignData/CleanSweep.SignData.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/CleanSweep.App.Tests/CleanSweep.App.Tests.csproj" />
     <Project Path="tests/CleanSweep.Core.Tests/CleanSweep.Core.Tests.csproj" />
   </Folder>
 </Solution>

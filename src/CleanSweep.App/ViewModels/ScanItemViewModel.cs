@@ -20,7 +20,7 @@ public sealed partial class ScanItemViewModel : ObservableObject
     [ObservableProperty]
     private bool _isDetailOpen;
 
-    /// <summary>是否被结果筛选框过滤掉（只影响显示，不影响勾选与清理）。</summary>
+    /// <summary>筛选后的可见性；隐藏项保留勾选状态，但不进入本次清理。</summary>
     [ObservableProperty]
     private bool _isVisible = true;
 
@@ -138,10 +138,11 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     }
 
     public long TotalBytes => Items.Sum(i => i.SizeBytes);
-    public long SelectedBytes => Items.Where(i => i.IsSelected).Sum(i => i.SizeBytes);
-    public int SelectedCount => Items.Count(i => i.IsSelected);
+    public IEnumerable<ScanItemViewModel> SelectedVisibleItems => Items.Where(i => i.IsVisible && i.IsSelected && i.CanSelect);
+    public long SelectedBytes => SelectedVisibleItems.Sum(i => i.SizeBytes);
+    public int SelectedCount => SelectedVisibleItems.Count();
     public string TotalText => Format.Bytes(TotalBytes);
-    public string SelectedText => $"已选 {SelectedCount}/{Items.Count} 项 · {Format.Bytes(SelectedBytes)}";
+    public string SelectedText => $"已选 {SelectedCount}/{Items.Count(i => i.IsVisible)} 个显示项 · {Format.Bytes(SelectedBytes)}";
 
     public int CountByRisk(RiskLevel risk) => Items.Count(i => i.Risk == risk);
 
@@ -170,14 +171,15 @@ public sealed partial class ScanGroupViewModel : ObservableObject
             IsExpanded = saved;
             _expandedBeforeFilter = null;
         }
+        RaiseSelectionChanged();
     }
 
-    /// <summary>三态：全选 true、全不选 false、部分 null。只按当前权限下可选的条目计算，禁用的条目不算"未选"。</summary>
+    /// <summary>三态只作用于当前可见且可选的条目，隐藏项保持原勾选状态。</summary>
     public bool? IsChecked
     {
         get
         {
-            var selectable = Items.Count(i => i.CanSelect);
+            var selectable = Items.Count(i => i.IsVisible && i.CanSelect);
             if (selectable == 0) return false;
             var n = SelectedCount;
             return n == 0 ? false : n == selectable ? true : null;
@@ -186,7 +188,7 @@ public sealed partial class ScanGroupViewModel : ObservableObject
         {
             if (value is null) return;
             _suppress = true;
-            foreach (var i in Items) i.IsSelected = value.Value && i.CanSelect;
+            foreach (var i in Items.Where(i => i.IsVisible)) i.IsSelected = value.Value && i.CanSelect;
             _suppress = false;
             RaiseSelectionChanged();
         }
@@ -196,6 +198,19 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     {
         item.SelectionChanged -= OnItemSelectionChanged;
         Items.Remove(item);
+        IsVisible = Items.Any(i => i.IsVisible);
+        RaiseSelectionChanged();
+    }
+
+    public void SelectSafeOnly()
+    {
+        _suppress = true;
+        try
+        {
+            foreach (var i in Items.Where(i => i.IsVisible))
+                i.IsSelected = i.Risk == RiskLevel.Safe && i.CanSelect;
+        }
+        finally { _suppress = false; }
         RaiseSelectionChanged();
     }
 

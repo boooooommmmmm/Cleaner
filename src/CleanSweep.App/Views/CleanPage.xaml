@@ -19,22 +19,30 @@
         <StackPanel Grid.Row="0">
             <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Title}"/>
             <TextBlock Text="{Binding Subtitle}" Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"/>
+            <TextBlock Text="自动记住勾选状态，下次扫描时恢复；新项目按默认规则选择。" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"/>
+            <TextBlock Text="{Binding SelectionSaveError}" Foreground="{StaticResource Brush.Risk.Confirm}" TextWrapping="Wrap"
+                       Visibility="{Binding SelectionSaveError, Converter={StaticResource NullToVis}}"/>
         </StackPanel>
 
         <!-- 工具栏 -->
         <Grid Grid.Row="1" Margin="0,18,0,0">
-            <StackPanel Orientation="Horizontal">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <WrapPanel>
                 <Button Content="开始扫描" Style="{StaticResource Button.Primary}" Command="{Binding ScanCommand}" MinWidth="110"
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
                 <Button Content="取消" Command="{Binding CancelCommand}" MinWidth="110"
                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"/>
-                <Button Content="清理选中项" Style="{StaticResource Button.Danger}" Command="{Binding CleanCommand}" MinWidth="110" Margin="8,0,0,0"/>
-                <Button Content="只选安全项" Style="{StaticResource Button.Link}" Command="{Binding SelectSafeOnlyCommand}" Margin="16,0,0,0"
+                <Button Content="清理显示的选中项" Style="{StaticResource Button.Danger}" Command="{Binding CleanCommand}" MinWidth="110" Margin="8,0,0,0"
+                        ToolTip="仅清理当前筛选结果中已勾选的项目；隐藏项目本次不处理"/>
+                <Button Content="只选显示的安全项" Style="{StaticResource Button.Link}" Command="{Binding SelectSafeOnlyCommand}" Margin="16,0,0,0"
                         Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}"/>
-                <Button Content="全不选" Style="{StaticResource Button.Link}" Command="{Binding SelectNoneCommand}"
+                <Button Content="显示项全不选" Style="{StaticResource Button.Link}" Command="{Binding SelectNoneCommand}"
                         Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}"/>
-            </StackPanel>
-            <TextBlock Text="{Binding SelectedText}" HorizontalAlignment="Right" VerticalAlignment="Center" FontWeight="SemiBold"/>
+            </WrapPanel>
+            <TextBlock Grid.Row="1" Text="{Binding SelectedText}" Margin="0,6,0,0" TextWrapping="Wrap" FontWeight="SemiBold"/>
         </Grid>
 
         <!-- 筛选与风险分布：有结果时才显示 -->
@@ -52,7 +60,7 @@
             <Button Grid.Column="1" Content="清除" Style="{StaticResource Button.Link}" Command="{Binding ClearFilterCommand}" Margin="4,0,0,0"
                     Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}}"/>
             <TextBlock Grid.Column="2" Text="{Binding RiskSummary}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Right" VerticalAlignment="Center"
-                       ToolTip="默认只勾选“安全”级项目；“建议确认”与“高风险”需要你逐项查看说明后再勾选"/>
+                       ToolTip="恢复上次勾选状态；没有记录或风险级别变化的项目按默认规则选择。清理前请核对已选项与风险说明。"/>
         </Grid>
 
         <!-- 结果 -->
