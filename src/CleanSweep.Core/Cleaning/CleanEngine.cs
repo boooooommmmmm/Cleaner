@@ -12,18 +12,19 @@ public sealed record CleanProgress(string CurrentItem, int Done, int Total, long
 
 public sealed record CleanFailure(string ItemId, string ItemDisplayName, string? Path, string Reason);
 
-/// <summary>单个条目的处理结果：成功、跳过、失败的计数，界面据此决定该行是移除还是保留。</summary>
+/// <summary>单个条目的处理结果：成功、已不存在、跳过、失败的计数，界面据此决定该行是移除还是保留。</summary>
 public sealed class ItemOutcome
 {
     public int Succeeded { get; internal set; }
     public int Skipped { get; internal set; }
     public int Failed { get; internal set; }
+    public int AlreadyAbsent { get; internal set; }
 
-    /// <summary>条目里的所有文件 / 动作都成功，界面可以把它从列表移除。</summary>
+    /// <summary>没有失败或跳过；还需排除 Untouched，才可从列表移除。</summary>
     public bool Complete => Failed == 0 && Skipped == 0;
 
     /// <summary>尚未处理（取消时剩下的条目）。</summary>
-    public bool Untouched => Succeeded == 0 && Skipped == 0 && Failed == 0;
+    public bool Untouched => Succeeded == 0 && Skipped == 0 && Failed == 0 && AlreadyAbsent == 0;
 }
 
 public sealed class CleanReport
@@ -44,6 +45,9 @@ public sealed class CleanReport
 
     /// <summary>删除的注册表值 / 键、服务、计划任务数（不经隔离区，靠备份撤销）。</summary>
     public int RegistryEntriesRemoved { get; set; }
+
+    /// <summary>清理前已确认不存在的注册表目标数，不计入删除或失败。</summary>
+    public int RegistryEntriesAlreadyAbsent { get; set; }
 
     /// <summary>因扫描后变化、白名单、已不存在等原因跳过的文件 / 目录数（不含正在使用的，见 <see cref="InUse"/>）。</summary>
     public int Skipped { get; set; }
@@ -216,7 +220,10 @@ public sealed class CleanEngine
             Fail(report, batchId, item, item.Path, "引擎未配置注册表备份，拒绝执行注册表类操作");
             return;
         }
-        var target = item.Registry?.KeyPath ?? item.ServiceName ?? item.TaskPath;
+        var target = item.Registry is { } registry
+            ? registry.KeyPath + (registry.ValueName is { } valueName ? "\\" + (valueName.Length == 0 ? "（默认值）" : valueName) : "")
+                + (registry.View == Microsoft.Win32.RegistryView.Registry32 ? "（32 位视图）" : registry.View == Microsoft.Win32.RegistryView.Registry64 ? "（64 位视图）" : "（默认视图）")
+            : item.ServiceName ?? item.TaskPath;
         try
         {
             var reason = $"清理：{item.DisplayName}";
@@ -236,7 +243,13 @@ public sealed class CleanEngine
                 ItemKind.RegistryKey => "delete-key",
                 ItemKind.Service => "delete-service",
                 _ => "delete-task",
-            }, target + (item.Registry?.ValueName is { } v ? "\\" + v : ""), 0, true, "备份：" + backup);
+            }, target, 0, true, "备份：" + backup);
+        }
+        catch (RegistryCleaning.RegistryTargetMissingException ex)
+        {
+            report.Outcome(item).AlreadyAbsent++;
+            report.RegistryEntriesAlreadyAbsent++;
+            _log.Write(batchId, item.ModuleId, "already-absent", target, 0, true, ex.Message);
         }
         catch (Exception ex)
         {

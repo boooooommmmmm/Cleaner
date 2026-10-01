@@ -78,8 +78,8 @@ public sealed partial class ShellViewModel : ObservableObject
         if (!_s.Settings.CheckUpdatesOnStartup || _s.UpdateSources is null) return;
         try
         {
-            var app = await _s.CheckAppUpdateAsync();
-            if (app.Available) UpdateNotice = $"有新版本 {app.Release!.Version.ToString(3)}，到“设置”页更新";
+            await _s.AppUpdates.CheckAndPrepareAsync();
+            if (_s.AppUpdates.InstallationStarted) return;
             var data = await _s.UpdateDataSetsAsync();
             if (data.Any(r => r.Updated)) UpdateNotice = (UpdateNotice is null ? "" : UpdateNotice + "；") + "规则库已更新";
         }
@@ -106,6 +106,10 @@ public sealed partial class ShellViewModel : ObservableObject
     public ShellViewModel(AppServices s)
     {
         _s = s;
+        s.AppUpdates.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(AppUpdateCoordinator.Status)) UpdateNotice = s.AppUpdates.Status;
+        };
         _ = s.Elevation.ProbeServiceAsync();
         Add(new NavItem
         {

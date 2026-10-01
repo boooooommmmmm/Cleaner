@@ -42,6 +42,19 @@ public sealed class AppServices
     public required StartupManager Startup { get; init; }
     public required AppSettings Settings { get; init; }
 
+    private AppUpdateCoordinator? _appUpdates;
+    public AppUpdateCoordinator AppUpdates => _appUpdates ??= new AppUpdateCoordinator(
+        CheckAppUpdateAsync, (release, progress, ct) => DownloadAppUpdateAsync(release, progress, ct),
+        (release, _) =>
+        {
+            var text = $"新版本 {release.Version.ToString(3)} 已下载并校验完成，现在更新吗？\n\n确认后将关闭 CleanSweep、安装更新并重新启动。请先完成当前操作；如需管理员权限，会弹出 UAC。\n\n选择“否”可稍后在设置中安装。";
+            return Task.FromResult(System.Windows.MessageBox.Show(System.Windows.Application.Current.MainWindow, text,
+                "新版本已准备好", System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Question)
+                == System.Windows.MessageBoxResult.Yes);
+        },
+        zip => AppUpdater.LaunchApply(AppContext.BaseDirectory.TrimEnd('\\'), zip),
+        () => System.Windows.Application.Current.Shutdown(0));
+
     // M3
     public required AppInventory Inventory { get; init; }
     public required UninstallHistory UninstallHistory { get; init; }
@@ -240,7 +253,7 @@ public sealed class AppServices
     /// </summary>
     public async Task<string> DownloadAppUpdateAsync(ReleaseInfo release, IProgress<(long Done, long Total)>? progress, CancellationToken ct = default)
     {
-        var zip = await new AppUpdater().DownloadAsync(release, AppPaths.AppUpdateStagingDir, progress, ct).ConfigureAwait(false);
+        var zip = await new AppUpdater().DownloadAsync(release, AppPaths.AppUpdateStagingDir, progress, ct, reuseExisting: true).ConfigureAwait(false);
         Log.Write(null, "app", "download-update", zip, release.Size, true, release.Version.ToString(3));
         return zip;
     }

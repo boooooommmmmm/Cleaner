@@ -128,6 +128,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         _watchUninstalls = s.Settings.WatchUninstalls;
         _updateSource = s.Settings.UpdateSource;
         _checkUpdatesOnStartup = s.Settings.CheckUpdatesOnStartup;
+        s.AppUpdates.PropertyChanged += (_, _) => SyncAppUpdateState();
+        SyncAppUpdateState();
         foreach (var r in s.Settings.DevProjectRoots) DevProjectRoots.Add(r);
         Refresh();
     }
@@ -272,13 +274,22 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     private static string DataSetName(string kind) => kind switch { "rules" => "规则库", "fingerprints" => "指纹库", "popups" => "弹窗规则", _ => kind };
 
-    private bool NotUpdating => !IsUpdating;
+    private bool NotUpdating => !IsUpdating && !_s.AppUpdates.IsBusy;
+
+    private void SyncAppUpdateState()
+    {
+        AvailableRelease = _s.AppUpdates.ReadyRelease;
+        AppUpdateStatus = _s.AppUpdates.Status;
+        CheckAppUpdateCommand.NotifyCanExecuteChanged();
+        CheckDataUpdatesCommand.NotifyCanExecuteChanged();
+        InstallAppUpdateCommand.NotifyCanExecuteChanged();
+    }
 
     partial void OnUpdateSourceChanged(string value)
     {
         _s.Settings.UpdateSource = value;
         _s.Settings.Save();
-        AvailableRelease = null;
+        _s.AppUpdates.ResetSource();
     }
 
     partial void OnCheckUpdatesOnStartupChanged(bool value)
@@ -299,59 +310,13 @@ public sealed partial class SettingsViewModel : ObservableObject
             AppUpdateStatus = problem;
             return;
         }
-        IsUpdating = true;
-        AppUpdateStatus = "正在检查程序更新…";
-        try
-        {
-            var r = await _s.CheckAppUpdateAsync();
-            AvailableRelease = r.Available ? r.Release : null;
-            AppUpdateStatus = r.Message + (r.Available && !string.IsNullOrWhiteSpace(r.Release!.Notes) ? "\n" + r.Release.Notes : "");
-        }
-        catch (Exception ex)
-        {
-            AppUpdateStatus = "检查更新失败：" + ex.Message;
-        }
-        finally
-        {
-            IsUpdating = false;
-        }
+        await _s.AppUpdates.CheckAndPrepareAsync(promptAgain: true);
     }
 
-    private bool CanInstallAppUpdate => !IsUpdating && AvailableRelease is not null;
+    private bool CanInstallAppUpdate => NotUpdating && AvailableRelease is not null;
 
     [RelayCommand(CanExecute = nameof(CanInstallAppUpdate))]
-    private async Task InstallAppUpdateAsync()
-    {
-        var release = AvailableRelease;
-        if (release is null) return;
-        var installDir = AppContext.BaseDirectory.TrimEnd('\\');
-        var needsAdmin = !Core.Integrity.AppUpdater.IsWritable(installDir) || Core.Integrity.ElevationServiceControl.Exists();
-        var msg = $"下载并安装 {release.Version.ToString(3)}（{release.Size / (1024.0 * 1024):0.#} MB）？\n\n下载完成并校验签名后程序会关闭，由安装目录里的程序再次校验并把新版本替换到\n{installDir}\n（失败会自动还原），然后重新启动。" +
-                  (needsAdmin ? "\n\n安装目录或提权服务需要管理员权限，届时会弹出 UAC。" : "");
-        if (MessageBox.Show(msg, "程序更新", MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
-        IsUpdating = true;
-        try
-        {
-            var progress = new Progress<(long Done, long Total)>(p => AppUpdateStatus = $"正在下载… {p.Done / (1024.0 * 1024):0.#} / {p.Total / (1024.0 * 1024):0.#} MB");
-            var zip = await _s.DownloadAppUpdateAsync(release, progress);
-            AppUpdateStatus = "下载完成，正在安装…";
-            var err = Core.Integrity.AppUpdater.LaunchApply(installDir, zip);
-            if (err is not null)
-            {
-                AppUpdateStatus = "安装未开始：" + err;
-                return;
-            }
-            Application.Current.Shutdown(0);
-        }
-        catch (Exception ex)
-        {
-            AppUpdateStatus = "更新失败：" + ex.Message;
-        }
-        finally
-        {
-            IsUpdating = false;
-        }
-    }
+    private Task InstallAppUpdateAsync() => _s.AppUpdates.InstallPreparedAsync();
 
     [RelayCommand(CanExecute = nameof(NotUpdating))]
     private async Task CheckDataUpdatesAsync()

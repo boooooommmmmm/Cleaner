@@ -17,6 +17,8 @@ public sealed partial class CleanPageViewModel : ObservableObject
     private readonly Func<IScanner[]> _scanners;
     private readonly Func<string?>? _postScanNote;
     private readonly Dictionary<ScanGroupViewModel, CleanSelectionTracker> _selectionTrackers = new();
+    private readonly HashSet<ScanGroupViewModel> _observedGroups = new();
+    private bool _applyingFilter;
 
     [ObservableProperty]
     private string? _selectionSaveError;
@@ -33,7 +35,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     public event EventHandler? ScanCompleted;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(CleanCommand), nameof(SelectSafeOnlyCommand), nameof(SelectNoneCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(CleanCommand), nameof(SelectSafeOnlyCommand), nameof(SelectNoneCommand), nameof(IgnoreItemCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -55,6 +57,9 @@ public sealed partial class CleanPageViewModel : ObservableObject
     [ObservableProperty]
     private string? _lastReport;
 
+    [ObservableProperty]
+    private bool _hasReportProblems;
+
     /// <summary>上次清理的失败 / 占用明细（页面内展开查看，为空时不显示）。</summary>
     [ObservableProperty]
     private string? _problemDetail;
@@ -65,6 +70,34 @@ public sealed partial class CleanPageViewModel : ObservableObject
     /// <summary>结果筛选关键字；本次清理只处理筛选后可见的已选项。</summary>
     [ObservableProperty]
     private string _filterText = "";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasActiveFilter))]
+    private CleanRiskFilter _riskFilter;
+
+    [ObservableProperty]
+    private CleanSortOrder _sortOrder;
+
+    [ObservableProperty]
+    private string _visibleResultsText = "";
+
+    [ObservableProperty]
+    private bool _hasNoVisibleResults;
+
+    public bool HasActiveFilter => !string.IsNullOrWhiteSpace(FilterText) || RiskFilter != CleanRiskFilter.All;
+
+    public IReadOnlyList<CleanResultOption<CleanRiskFilter>> RiskFilters { get; } =
+    [
+        new(CleanRiskFilter.All, "全部风险"), new(CleanRiskFilter.Safe, "安全"),
+        new(CleanRiskFilter.Confirm, "建议确认"), new(CleanRiskFilter.High, "高风险"),
+        new(CleanRiskFilter.NotRecommended, "不建议清理"),
+    ];
+
+    public IReadOnlyList<CleanResultOption<CleanSortOrder>> SortOrders { get; } =
+    [
+        new(CleanSortOrder.ScanOrder, "扫描顺序"), new(CleanSortOrder.SizeDescending, "大小：从大到小"),
+        new(CleanSortOrder.NameAscending, "名称"), new(CleanSortOrder.RiskAscending, "风险：从低到高"),
+    ];
 
     /// <summary>风险分布："安全 12 · 建议确认 3 · 高风险 1"。</summary>
     [ObservableProperty]
@@ -81,23 +114,30 @@ public sealed partial class CleanPageViewModel : ObservableObject
         var settings = selectionSettings ?? s?.Settings;
         Groups.CollectionChanged += (_, _) =>
         {
-            foreach (var removed in _selectionTrackers.Keys.Where(g => !Groups.Contains(g)).ToArray())
+            foreach (var removed in _observedGroups.Where(g => !Groups.Contains(g)).ToArray())
             {
-                _selectionTrackers[removed].Dispose();
+                if (_selectionTrackers.Remove(removed, out var tracker)) tracker.Dispose();
                 removed.SelectionChanged -= OnGroupSelectionChanged;
-                _selectionTrackers.Remove(removed);
+                _observedGroups.Remove(removed);
             }
-            if (settings is null) return;
-            foreach (var added in Groups.Where(g => !_selectionTrackers.ContainsKey(g)))
+            foreach (var added in Groups.Where(g => !_observedGroups.Contains(g)))
             {
-                _selectionTrackers.Add(added, new CleanSelectionTracker(added, settings, () => !IsBusy,
-                    error => SelectionSaveError = error));
+                if (settings is not null)
+                    _selectionTrackers.Add(added, new CleanSelectionTracker(added, settings, () => !IsBusy,
+                        error => SelectionSaveError = error));
+                _observedGroups.Add(added);
                 added.SelectionChanged += OnGroupSelectionChanged;
+                added.ApplyFilter(FilterText, RiskFilter);
+                added.SortItems(SortOrder);
             }
+            UpdateTotals();
         };
     }
 
-    private void OnGroupSelectionChanged(object? sender, EventArgs e) => UpdateTotals();
+    private void OnGroupSelectionChanged(object? sender, EventArgs e)
+    {
+        if (!_applyingFilter) UpdateTotals();
+    }
 
     private bool CanScan => !IsBusy;
 
@@ -107,6 +147,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         IsBusy = true;
         HasResults = false;
         LastReport = null;
+        HasReportProblems = false;
         ProblemDetail = null;
         ClearGroups();
         Status = "正在扫描…";
@@ -138,7 +179,6 @@ public sealed partial class CleanPageViewModel : ObservableObject
                 // 条目很多的分组（如 MUI 缓存孤儿）默认折叠，避免淹没其他分组
                 if (group.Items.Count > 30) group.IsExpanded = false;
                 Groups.Add(group);
-                group.ApplyFilter(FilterText);
             }
 
             HasResults = Groups.Count > 0;
@@ -172,12 +212,31 @@ public sealed partial class CleanPageViewModel : ObservableObject
 
     partial void OnFilterTextChanged(string value)
     {
-        foreach (var g in Groups) g.ApplyFilter(value);
+        OnPropertyChanged(nameof(HasActiveFilter));
+        ApplyResultFilter();
+    }
+
+    partial void OnRiskFilterChanged(CleanRiskFilter value) => ApplyResultFilter();
+
+    partial void OnSortOrderChanged(CleanSortOrder value)
+    {
+        foreach (var g in Groups) g.SortItems(value);
+    }
+
+    private void ApplyResultFilter()
+    {
+        _applyingFilter = true;
+        try { foreach (var g in Groups) g.ApplyFilter(FilterText, RiskFilter); }
+        finally { _applyingFilter = false; }
         UpdateTotals();
     }
 
     [RelayCommand]
-    private void ClearFilter() => FilterText = "";
+    private void ClearFilter()
+    {
+        FilterText = "";
+        RiskFilter = CleanRiskFilter.All;
+    }
 
     /// <summary>取消当前正在进行的扫描或清理。</summary>
     [RelayCommand]
@@ -203,7 +262,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         var fileLike = selected.Count - registryLike - commands - (recycle ? 1 : 0);
 
         var msg = $"将清理 {selected.Count} 项，约 {Format.Bytes(selected.Sum(i => i.SizeBytes))}。";
-        if (!string.IsNullOrWhiteSpace(FilterText)) msg += "\n\n仅处理当前筛选结果中的已选项目，隐藏项目本次不处理。";
+        if (HasActiveFilter) msg += "\n\n仅处理当前筛选结果中的已选项目，隐藏项目本次不处理。";
         if (fileLike > 0) msg += $"\n\n文件会先移入隔离区，默认保留 {_s.Settings.RetentionDays} 天；超过容量上限可能提前淘汰，未永久删除前可恢复。";
         if (registryLike > 0) msg += $"\n\n{registryLike} 项为注册表值 / 键、服务或计划任务：不经过隔离区，删除前自动备份（.reg / 任务 XML），可在“设置 → 备份与还原”中还原。";
         if (risky > 0) msg += $"\n\n注意：其中 {risky} 项为“建议确认”或“高风险”级别，请确认已阅读说明。";
@@ -273,6 +332,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
 
             var summary = $"{report.FilesQuarantined} 个文件与 {report.DirectoriesQuarantined} 个目录移入隔离区（{Format.Bytes(report.QuarantinedBytes)}，到期或永久删除后释放）";
             if (report.RegistryEntriesRemoved > 0) summary += $"，删除 {report.RegistryEntriesRemoved} 项注册表 / 服务 / 任务（已备份，可在设置中还原）";
+            if (report.RegistryEntriesAlreadyAbsent > 0) summary += $"，{report.RegistryEntriesAlreadyAbsent} 项注册表目标已不存在，无需清理（已从列表移除）";
             if (report.FreedBytes > 0) summary += $"，直接释放 {Format.Bytes(report.FreedBytes)}";
             if (report.InUse > 0) summary += $"，{report.InUse} 个文件正在被其他程序使用，这次跳过（关闭相关程序后重新扫描即可）";
             if (report.Skipped > 0) summary += $"，跳过 {report.Skipped} 个已变化或白名单内的文件（所在项目保留在列表中）";
@@ -280,6 +340,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
             if (serviceItems.Count > 0) summary += $"；提权服务处理 {serviceItems.Count} 项（{Format.Bytes(serviceBytes)}）" + (serviceMessages.Count > 0 ? $"，{serviceMessages.Count} 条问题" : "");
             summary += $"。耗时 {report.Elapsed.TotalSeconds:0.#} 秒。";
 
+            HasReportProblems = incomplete.Count > 0 || report.Failures.Count > 0 || serviceMessages.Count > 0;
             LastReport = summary;
             Status = incomplete.Count > 0 ? "清理完成，部分项目未完全处理。重新扫描可刷新这些项目的内容。" : "清理完成。";
 
@@ -327,10 +388,12 @@ public sealed partial class CleanPageViewModel : ObservableObject
         UpdateTotals();
     }
 
-    [RelayCommand]
+    private bool CanIgnoreItem(ScanItemViewModel? item) => !IsBusy && item is not null && Groups.Any(g => g.Items.Contains(item));
+
+    [RelayCommand(CanExecute = nameof(CanIgnoreItem))]
     private void IgnoreItem(ScanItemViewModel? item)
     {
-        if (item is null) return;
+        if (item is null || !CanIgnoreItem(item)) return;
         if (MessageBox.Show($"以后不再扫描“{item.Name}”？\n可在“设置”页面的白名单中恢复。", "加入白名单",
                 MessageBoxButton.OKCancel, MessageBoxImage.Question) != MessageBoxResult.OK) return;
 
@@ -345,6 +408,10 @@ public sealed partial class CleanPageViewModel : ObservableObject
     private void UpdateTotals()
     {
         TotalText = Format.Bytes(Groups.Sum(g => g.TotalBytes));
+        var allRows = Groups.SelectMany(g => g.Items).ToArray();
+        var visibleRows = allRows.Where(i => i.IsVisible).ToArray();
+        VisibleResultsText = $"显示 {visibleRows.Length}/{allRows.Length} 项 · {Format.Bytes(visibleRows.Sum(i => i.SizeBytes))}";
+        HasNoVisibleResults = allRows.Length > 0 && visibleRows.Length == 0;
         var count = Groups.Sum(g => g.SelectedCount);
         SelectedText = count == 0 ? "未选择任何项目" : $"已选择 {count} 项，{Format.Bytes(Groups.Sum(g => g.SelectedBytes))}";
         var hidden = Groups.Sum(g => g.Items.Count(i => !i.IsVisible && i.IsSelected && i.CanSelect));
@@ -357,6 +424,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         }
         RiskSummary = string.Join(" · ", parts);
         CleanCommand.NotifyCanExecuteChanged();
+        IgnoreItemCommand.NotifyCanExecuteChanged();
     }
 
     private void ClearGroups()
@@ -366,5 +434,8 @@ public sealed partial class CleanPageViewModel : ObservableObject
         SelectedText = "";
         RiskSummary = "";
         FilterText = "";
+        RiskFilter = CleanRiskFilter.All;
+        VisibleResultsText = "";
+        HasNoVisibleResults = false;
     }
 }

@@ -19,7 +19,7 @@
 | 系统还原点（修改服务前创建，失败时降级并提示） | 可用 |
 | Path Guard 引擎护栏（重解析点、保护路径、规则路径校验） | 可用 |
 | 白名单、操作日志（可导出 CSV）、半完成批次识别 | 可用 |
-| 清理结果页：每项可展开“依据 / 影响 / 恢复方式 / 执行前核对”说明，按名称或路径筛选，风险分布统计，记住上次勾选状态 | 可用 |
+| 清理结果页：每项可展开“依据 / 影响 / 恢复方式 / 执行前核对”说明，关键字与风险组合筛选，组内按大小 / 名称 / 风险排序，可见结果统计，记住上次勾选状态 | 可用 |
 | 已安装软件清单（注册表、应用商店、便携软件、运行进程）与应用指纹库（69 条） | 可用 |
 | 用户目录残留清理（按应用聚合；确认 / 疑似 / 未知三级；多用户与已删除账户；卸载记录定向扫描） | 可用 |
 | 开发者缓存（Gradle / Maven / NuGet / npm / pip / Docker 等只清缓存；闲置 node_modules；conda 环境） | 可用 |
@@ -62,7 +62,7 @@ dotnet run --project src/CleanSweep.App
 ```powershell
 powershell -NoProfile -File tools/verify.ps1 -Configuration Release
 # 可选：同时核对本地发布目录的安装清单、二进制版本和 ZIP 的签名/大小/哈希
-powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir publish/win-x64 -ReleaseZip publish/CleanSweep-win-x64-0.18.0.zip
+powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir publish/win-x64 -ReleaseZip publish/CleanSweep-win-x64-0.19.0.zip
 ```
 
 结果保存在 `artifacts/verification/<配置>/`（JSON 摘要和 TRX）。GitHub Actions 对 push / pull_request 使用相同入口运行 Debug、Release，两端均只用公钥验签。验证不读取私钥或发布令牌，不安装服务，也不发布版本；真实管理员/SYSTEM 场景仍需虚拟机验收。
@@ -70,6 +70,8 @@ powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir 
 `tools/release.ps1 -Publish` 会在构建前后拒绝未提交或未跟踪文件（仅允许本次生成的 `release/latest.json`），并核对发布版本与二进制版本，防止未跟踪源码混入已提交版本的发布包。
 
 清理页的筛选同时限定本次清理与批量选择范围；隐藏项保留勾选状态，但不参与本次清理。隔离区的“删除过期项”也只处理当前显示范围。
+
+清理结果支持将关键字与风险级别一起筛选，并显示当前可见项数及大小。组内排序可选择扫描顺序、大小从大到小、名称或风险从低到高；排序保留勾选和详情展开状态。“清除筛选”同时清空关键字和风险条件，并恢复筛选前的分组折叠状态。风险筛选只作用于已有扫描结果，不会显示被扫描设置排除的项目。
 
 改过 `rules/`、`fingerprints/`、`popups/` 里的任何文件后必须重新签名，否则程序拒绝加载该数据集（测试也会失败）：
 
@@ -93,17 +95,17 @@ powershell -File tools/uninstall.ps1 [-RemoveData]
 
 ## 自动更新（GitHub 仓库作为更新来源）
 
-设置页"更新来源"默认是官方仓库 `boooooommmmmm/Cleaner`（v0.16.1 起；此前默认为空，装好后从不检查更新），可改成其他 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西。GitHub 仓库形式在 raw.githubusercontent.com 连不上时会自动改用 jsDelivr 镜像再试一次（镜像只是搬运，签名与哈希校验不变）。启动时后台检查只提示不自动安装，安装要到设置页点"下载并安装"。0.15.0 → 0.16.0 的完整流程（下载、校验、安装目录里的程序复验并替换、以新版本重启）已在本机真实跑通。
+设置页"更新来源"默认是官方仓库 `boooooommmmmm/Cleaner`（v0.16.1 起；此前默认为空，装好后从不检查更新），可改成其他 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西。GitHub 仓库形式在 raw.githubusercontent.com 连不上时会自动改用 jsDelivr 镜像再试一次（镜像只是搬运，签名与哈希校验不变）。启动检查发现新版本后先静默下载并校验，完成后询问是否安装；选择稍后可在设置页点“安装已下载更新”。0.15.0 → 0.16.0 的完整流程（下载、校验、安装目录里的程序复验并替换、以新版本重启）已在本机真实跑通。
 
 - **规则库 / 指纹库 / 弹窗规则**：`<来源>/rules|fingerprints|popups/manifest.json`。签名可信、版本高于当前、逐文件哈希一致后整体切换到数据目录的 `updates\<kind>`。直接把签好名的目录提交到仓库即可，GitHub 的 raw 地址就是更新源。
-- **程序本身**：`<来源>/release/latest.json`（版本、压缩包名、下载地址、SHA-256、大小、签名，用数据签名密钥签发）。版本更高时用户可在设置页"下载并安装"，分三步：① 界面下载压缩包（流式核对大小与哈希）并把签名的发布信息存在旁边，然后关闭自己；② **安装目录里已有的** CleanSweep.exe（可信位置；安装目录不可写或装有提权服务时弹 UAC）以独占方式打开压缩包，重新校验发布信息签名、版本只升、大小与哈希、条目路径和其中数据集的签名，解压到安装目录下的 `.update-stage`；③ 那里的新程序等旧进程退出、停提权服务，把旧文件改名到 `.update-backup` 再复制新文件，任何失败全部还原并恢复服务；成功后启动新版本并清理。替换只涉及安装清单 `install-files.txt` 里的文件，不跟随安装目录内的 Junction / 符号链接。勾选"启动时在后台检查更新"只提示不自动安装。
+- **程序本身**：`<来源>/release/latest.json`（版本、压缩包名、下载地址、SHA-256、大小、签名，用数据签名密钥签发）。发现更高版本后先在后台下载并校验，完成后再询问是否安装，分三步：① 界面下载压缩包（流式核对大小与哈希）并把签名的发布信息存在旁边，用户确认安装后才启动更新并退出；② **安装目录里已有的** CleanSweep.exe（可信位置；安装目录不可写或装有提权服务时弹 UAC）以独占方式打开压缩包，重新校验发布信息签名、版本只升、大小与哈希、条目路径和其中数据集的签名，解压到安装目录下的 `.update-stage`；③ 那里的新程序等旧进程退出、停提权服务，把旧文件改名到 `.update-backup` 再复制新文件，任何失败全部还原并恢复服务；成功后启动新版本并清理。替换只涉及安装清单 `install-files.txt` 里的文件，不跟随安装目录内的 Junction / 符号链接。已下载的安装包在重新核对长度与哈希后可复用；选择稍后不会退出程序，下载失败也不会弹出安装确认。
 
 发布一个可自动更新的版本：
 
 ```powershell
 powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.18.0"; git push
-# 在 GitHub 创建 tag v0.18.0 的 Release，上传 publish/CleanSweep-win-x64-0.18.0.zip（地址须与 latest.json 里的 url 一致）
+git add release/latest.json; git commit -m "release v0.19.0"; git push
+# 在 GitHub 创建 tag v0.19.0 的 Release，上传 publish/CleanSweep-win-x64-0.19.0.zip（地址须与 latest.json 里的 url 一致）
 ```
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。

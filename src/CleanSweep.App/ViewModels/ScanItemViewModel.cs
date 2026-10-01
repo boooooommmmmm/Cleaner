@@ -126,12 +126,14 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     public event EventHandler? SelectionChanged;
 
     private bool _suppress;
+    private readonly Dictionary<ScanItemViewModel, int> _scanOrder = new();
 
     public ScanGroupViewModel(string name, IEnumerable<ScanItemViewModel> items)
     {
         Name = name;
         foreach (var i in items)
         {
+            _scanOrder[i] = _scanOrder.Count;
             i.SelectionChanged += OnItemSelectionChanged;
             Items.Add(i);
         }
@@ -151,13 +153,13 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     /// <summary>
     /// 应用结果筛选：逐项设置可见性；筛选命中时把组展开让结果直接可见，清除筛选后恢复用户原来的折叠状态。
     /// </summary>
-    public void ApplyFilter(string? keyword)
+    public void ApplyFilter(string? keyword, CleanRiskFilter risk = CleanRiskFilter.All)
     {
-        var filtering = !string.IsNullOrWhiteSpace(keyword);
+        var filtering = !string.IsNullOrWhiteSpace(keyword) || risk != CleanRiskFilter.All;
         var any = false;
         foreach (var i in Items)
         {
-            i.IsVisible = !filtering || i.MatchesFilter(keyword);
+            i.IsVisible = i.MatchesFilter(keyword) && risk.Matches(i.Risk);
             any |= i.IsVisible;
         }
         IsVisible = any;
@@ -172,6 +174,24 @@ public sealed partial class ScanGroupViewModel : ObservableObject
             _expandedBeforeFilter = null;
         }
         RaiseSelectionChanged();
+    }
+
+    /// <summary>保留条目对象和勾选状态；相同排序值按扫描顺序排列。</summary>
+    public void SortItems(CleanSortOrder order)
+    {
+        int Original(ScanItemViewModel item) => _scanOrder.GetValueOrDefault(item, int.MaxValue);
+        var sorted = order switch
+        {
+            CleanSortOrder.SizeDescending => Items.OrderByDescending(i => i.SizeBytes).ThenBy(Original),
+            CleanSortOrder.NameAscending => Items.OrderBy(i => i.Name, StringComparer.CurrentCultureIgnoreCase).ThenBy(Original),
+            CleanSortOrder.RiskAscending => Items.OrderBy(i => i.Risk).ThenBy(Original),
+            _ => Items.OrderBy(Original),
+        };
+        var rows = sorted.ToArray();
+        if (Items.SequenceEqual(rows)) return;
+        // 重排集合，不重新创建行，避免丢失勾选和展开的详情。
+        Items.Clear();
+        foreach (var row in rows) Items.Add(row);
     }
 
     /// <summary>三态只作用于当前可见且可选的条目，隐藏项保持原勾选状态。</summary>
@@ -198,6 +218,7 @@ public sealed partial class ScanGroupViewModel : ObservableObject
     {
         item.SelectionChanged -= OnItemSelectionChanged;
         Items.Remove(item);
+        _scanOrder.Remove(item);
         IsVisible = Items.Any(i => i.IsVisible);
         RaiseSelectionChanged();
     }

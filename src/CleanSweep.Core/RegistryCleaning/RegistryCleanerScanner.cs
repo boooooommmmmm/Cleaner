@@ -134,8 +134,9 @@ public sealed class RegistryCleanerScanner : IScanner
         if (_options.IncludeSharedDlls) Run("shareddlls", () => ScanSharedDlls(items, ct));
         if (_options.IncludeShortcuts) Run("shortcuts", () => ScanShortcuts(ctx, items, ct));
 
-        progress?.Report(new ScanProgress(Id, null, items.Count, 0));
-        return items;
+        var unique = items.DistinctBy(RegistryScanIdentity.ForItem).ToArray();
+        progress?.Report(new ScanProgress(Id, null, unique.Length, 0));
+        return unique;
     }
 
     private static string MakeId(params string[] parts) => RuleScanner.MakeId(new[] { ModuleId }.Concat(parts).ToArray());

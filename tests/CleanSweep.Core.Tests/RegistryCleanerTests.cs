@@ -290,6 +290,90 @@ public sealed class RegistryCleanerScannerTests : IDisposable
     }
 
     [Fact]
+    public async Task Scanner_merges_shared_targets_from_both_views()
+    {
+        var baseline = await Scan(Options());
+        var opts = Options();
+        opts.AppPathsKeys.Add((opts.AppPathsKeys[0].Key, RegistryView.Registry32));
+        opts.ClassesRoots.Add((opts.ClassesRoots[0].Key, RegistryView.Registry32));
+        var items = await Scan(opts);
+        Assert.Equal(baseline.Select(i => i.Id).Order(), items.Select(i => i.Id).Order());
+        Assert.Single(items, i => i.Registry?.KeyPath == $@"{_base}\Classes\.gone");
+        Assert.Single(items, i => i.Registry?.KeyPath == $@"{_base}\App Paths\gone.exe");
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Already_missing_targets_leave_list_without_counting_as_deleted_or_failed(bool wholeKeyForValue)
+    {
+        var items = await Scan(Options());
+        var value = items.Single(i => i.Group.StartsWith("MUI"));
+        var key = items.Single(i => i.Group == "无效的卸载项");
+        Registry.CurrentUser.DeleteSubKeyTree($@"{TestRoot}\{_name}\Uninstall\BadApp_is1");
+        if (wholeKeyForValue) Registry.CurrentUser.DeleteSubKeyTree($@"{TestRoot}\{_name}\MuiCache");
+        else
+        {
+            using var mui = RegistryPath.Open(value.Registry!.KeyPath, value.Registry.View, writable: true)!;
+            mui.DeleteValue(value.Registry.ValueName!);
+        }
+        var backup = new RegistryBackup(_db, Path.Combine(_t.Root, "Backups"));
+        var log = new OperationLog(_db);
+        var engine = new CleanEngine(_t.Guard, new Quarantine(_db, null, _ => Path.Combine(_t.Root, "Q"), _t.Guard), log, new NullPreActionRunner(), null, new RegistryOps(backup));
+        var report = await engine.CleanAsync(new[] { value, key }, null, default);
+        Assert.Empty(report.Failures);
+        Assert.Empty(report.IncompleteItemIds);
+        Assert.Equal(2, report.RegistryEntriesAlreadyAbsent);
+        Assert.Equal(0, report.RegistryEntriesRemoved);
+        Assert.Equal(0, report.Skipped);
+        Assert.All(report.Outcomes.Values, outcome => Assert.Equal(0, outcome.Succeeded));
+        Assert.Empty(backup.List());
+        Assert.Equal(2, log.GetOperations(report.BatchId).Count(o => o.Action == "already-absent"));
+    }
+
+    [Fact]
+    public async Task Duplicate_shared_key_from_old_scan_is_deleted_and_backed_up_only_once()
+    {
+        var key = (await Scan(Options())).Single(i => i.Group == "无效的卸载项");
+        var duplicate = key with { Id = key.Id + "-32", Registry = key.Registry! with { View = RegistryView.Registry32 } };
+        var backup = new RegistryBackup(_db, Path.Combine(_t.Root, "Backups"));
+        var engine = new CleanEngine(_t.Guard, new Quarantine(_db, null, _ => Path.Combine(_t.Root, "Q"), _t.Guard), new OperationLog(_db), new NullPreActionRunner(), null, new RegistryOps(backup));
+        var report = await engine.CleanAsync(new[] { key, duplicate }, null, default);
+        Assert.Empty(report.Failures);
+        Assert.Empty(report.IncompleteItemIds);
+        Assert.Equal(1, report.RegistryEntriesRemoved);
+        Assert.Equal(1, report.RegistryEntriesAlreadyAbsent);
+        var saved = Assert.Single(backup.List());
+        backup.Restore(saved.Id);
+        Assert.Equal(key.TargetSnapshot, RegistrySnapshot.OfKey(key.Registry!.KeyPath, key.Registry.View));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Backup_failure_keeps_target_and_reports_stage_and_view(bool valueTarget)
+    {
+        var items = await Scan(Options());
+        var item = valueTarget ? items.Single(i => i.Group.StartsWith("MUI")) : items.Single(i => i.Group == "无效的卸载项");
+        var backupDir = Path.Combine(_t.Root, "Backups");
+        var backup = new RegistryBackup(_db, backupDir);
+        // 用普通文件阻挡测试目录中的备份输出，模拟真实写入失败。
+        Directory.Delete(backupDir);
+        File.WriteAllText(backupDir, "blocked");
+        var engine = new CleanEngine(_t.Guard, new Quarantine(_db, null, _ => Path.Combine(_t.Root, "Q"), _t.Guard), new OperationLog(_db), new NullPreActionRunner(), null, new RegistryOps(backup));
+        var report = await engine.CleanAsync(new[] { item }, null, default);
+        var failure = Assert.Single(report.Failures);
+        Assert.Contains("备份阶段失败，未执行删除", failure.Reason);
+        Assert.Contains("64 位视图", failure.Path);
+        Assert.Contains(item.Id, report.IncompleteItemIds);
+        Assert.Equal(0, report.RegistryEntriesRemoved);
+        Assert.Equal(0, report.RegistryEntriesAlreadyAbsent);
+        var target = item.Registry!;
+        var current = valueTarget ? RegistrySnapshot.OfValue(target.KeyPath, target.View, target.ValueName!) : RegistrySnapshot.OfKey(target.KeyPath, target.View);
+        Assert.Equal(item.TargetSnapshot, current);
+    }
+
+    [Fact]
     public async Task Engine_deletes_registry_items_with_backup_and_restore_brings_them_back()
     {
         var items = await Scan(Options());

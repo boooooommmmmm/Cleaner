@@ -51,7 +51,7 @@ public sealed class AppSettings
     /// </summary>
     public string UpdateSource { get; set; } = Core.Integrity.UpdateSources.Default;
 
-    /// <summary>启动时在后台检查程序与数据集更新（只提示，不自动安装）。</summary>
+    /// <summary>启动时后台检查更新；程序包静默下载并校验后询问是否安装。</summary>
     public bool CheckUpdatesOnStartup { get; set; } = true;
 
     /// <summary>侧栏分组的展开状态（分组名 → 是否展开）；没记录的分组用默认值。</summary>

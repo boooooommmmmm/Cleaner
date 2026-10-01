@@ -39,6 +39,25 @@ public sealed class CleanSelectionTests : IDisposable
     }
 
     [Fact]
+    public void Risk_filter_and_sort_preserve_saved_selection_without_rewriting_settings()
+    {
+        var safe = Row("safe");
+        var high = Row("high", RiskLevel.High);
+        var page = Page(AppSettings.Load(SettingsFile), safe, high);
+        high.IsSelected = true;
+        safe.IsSelected = false;
+        var saved = File.ReadAllText(SettingsFile);
+        page.RiskFilter = CleanRiskFilter.High;
+        page.SortOrder = CleanSortOrder.RiskAscending;
+        page.SortOrder = CleanSortOrder.NameAscending;
+        page.ClearFilterCommand.Execute(null);
+        Assert.Equal(saved, File.ReadAllText(SettingsFile));
+        var settings = AppSettings.Load(SettingsFile);
+        Assert.True(settings.CleaningSelectionFor(high.Item));
+        Assert.False(settings.CleaningSelectionFor(safe.Item));
+    }
+
+    [Fact]
     public void Filtered_bulk_selection_remembers_only_changed_visible_items()
     {
         var chrome = Row("Chrome");

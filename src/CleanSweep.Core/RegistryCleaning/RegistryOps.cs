@@ -8,7 +8,7 @@ namespace CleanSweep.Core.RegistryCleaning;
 
 /// <summary>
 /// 注册表 / 服务 / 计划任务的删除执行器：先经 <see cref="RegistryGuard"/>，再做备份（值级 .reg、整键导出、任务 XML），再删。
-/// 每一步失败都抛出异常，由清理引擎按"该项失败"处理。
+/// 已消失的目标由引擎单独统计，其余失败保留在列表中。
 /// </summary>
 public sealed class RegistryOps
 {
@@ -35,9 +35,15 @@ public sealed class RegistryOps
         if (t.ValueName is null) throw new ArgumentException("缺少值名");
         var bad = RegistryGuard.CheckDeleteValue(t.KeyPath, t.View, t.ValueName);
         if (bad is not null) throw new InvalidOperationException("注册表护栏拒绝：" + bad);
+        // 枚举值名确认缺失，不能把读取值内容失败误报为“已不存在”。
+        using (var existing = RegistryPath.Open(t.KeyPath, t.View, writable: false))
+        {
+            if (existing is null || !existing.GetValueNames().Contains(t.ValueName, StringComparer.OrdinalIgnoreCase))
+                throw new RegistryTargetMissingException();
+        }
         Require(expectedSnapshot, RegistrySnapshot.OfValue(t.KeyPath, t.View, t.ValueName), missingPath);
 
-        var rec = _backup.BackupValue(t.KeyPath, t.ValueName, reason, t.View);
+        var rec = BeforeDeleteBackup(() => _backup.BackupValue(t.KeyPath, t.ValueName, reason, t.View));
         using var k = RegistryPath.Open(t.KeyPath, t.View, writable: true) ?? throw new InvalidOperationException("键已不存在");
         k.DeleteValue(t.ValueName, throwOnMissingValue: false);
         return Path.GetFileName(rec.File);
@@ -48,15 +54,25 @@ public sealed class RegistryOps
     {
         var bad = RegistryGuard.CheckDeleteKey(t.KeyPath, t.View);
         if (bad is not null) throw new InvalidOperationException("注册表护栏拒绝：" + bad);
-        if (!RegistryPath.Exists(t.KeyPath, t.View)) throw new InvalidOperationException("键已不存在");
-        Require(expectedSnapshot, RegistrySnapshot.OfKey(t.KeyPath, t.View), missingPath);
+        var current = RegistrySnapshot.OfKey(t.KeyPath, t.View);
+        if (current == RegistrySnapshot.Missing) throw new RegistryTargetMissingException();
+        Require(expectedSnapshot, current, missingPath);
 
-        var rec = _backup.Backup(t.KeyPath, reason, t.View);
+        var rec = BeforeDeleteBackup(() => _backup.Backup(t.KeyPath, reason, t.View));
         var parent = RegistryPath.Parent(t.KeyPath);
         var name = t.KeyPath[(t.KeyPath.LastIndexOf('\\') + 1)..];
         using var p = RegistryPath.Open(parent, t.View, writable: true) ?? throw new InvalidOperationException("父键已不存在");
         p.DeleteSubKeyTree(name, throwOnMissingSubKey: false);
         return Path.GetFileName(rec.File);
+    }
+
+    private static RegistryBackupRecord BeforeDeleteBackup(Func<RegistryBackupRecord> backup)
+    {
+        try { return backup(); }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("备份阶段失败，未执行删除：" + ex.Message, ex);
+        }
     }
 
     // ---------- 服务 ----------

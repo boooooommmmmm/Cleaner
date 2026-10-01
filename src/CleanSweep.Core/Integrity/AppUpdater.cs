@@ -170,8 +170,10 @@ public sealed class AppUpdater
     /// <summary>
     /// 下载到 stagingRoot 下的 &lt;asset&gt;，边下边算哈希，大小与哈希都必须与签名的发布信息一致；
     /// 通过后把签名的发布信息原样写到 &lt;asset&gt;.release.json，供安装阶段独立复验。
+    /// reuseExisting 为 true 时重新核对磁盘中已有包的长度和哈希，匹配则复用，并重写已验签的发布信息。
     /// </summary>
-    public async Task<string> DownloadAsync(ReleaseInfo release, string stagingRoot, IProgress<(long Done, long Total)>? progress = null, CancellationToken outerCt = default)
+    public async Task<string> DownloadAsync(ReleaseInfo release, string stagingRoot, IProgress<(long Done, long Total)>? progress = null, CancellationToken outerCt = default,
+        bool reuseExisting = false)
     {
         if (release.Source is null) throw new InvalidOperationException("发布信息缺少签名原文，无法交给安装阶段复验");
         using var timeout = new CancellationTokenSource(DownloadTimeout);
@@ -179,6 +181,14 @@ public sealed class AppUpdater
         var ct = linked.Token;
         Directory.CreateDirectory(stagingRoot);
         var target = Path.Combine(stagingRoot, release.Asset);
+        if (reuseExisting && await Task.Run(() => ReleaseManifest.VerifyAsset(release, target) is null, ct).ConfigureAwait(false))
+        {
+            ct.ThrowIfCancellationRequested();
+            // Rebuild the sidecar from the newly verified server metadata, never trust a cached sidecar.
+            File.WriteAllText(target + ReleaseInfoSuffix, ReleaseManifest.ToJson(release.Source));
+            progress?.Report((release.Size, release.Size));
+            return target;
+        }
         var temp = target + ".part";
         try
         {

@@ -30,6 +30,27 @@ public static class ReleaseManifest
 {
     public const long MaxAssetBytes = 1024L * 1024 * 1024;
 
+    /// <summary>安装提示前核对磁盘中的签名发布信息和压缩包；安装进程仍须独立复验。</summary>
+    public static string? VerifyPreparedAsset(ReleaseInfo expected, string assetPath,
+        IReadOnlyDictionary<string, byte[]>? trustedKeys = null)
+    {
+        try
+        {
+            var dto = JsonSerializer.Deserialize<ReleaseInfoDto>(File.ReadAllText(assetPath + AppUpdater.ReleaseInfoSuffix));
+            var actual = Verify(dto, trustedKeys ?? TrustedKeys.Current, out var error);
+            if (actual is null) return "本地发布信息无效：" + error;
+            if (actual.Version != expected.Version || actual.Asset != expected.Asset || actual.Url != expected.Url
+                || actual.Size != expected.Size || actual.KeyId != expected.KeyId
+                || !actual.Sha256.Equals(expected.Sha256, StringComparison.OrdinalIgnoreCase))
+                return "本地发布信息与准备安装的版本不一致";
+            return VerifyAsset(actual, assetPath);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return "无法读取本地发布信息：" + ex.Message;
+        }
+    }
+
     /// <summary>发布前将本地资产与已验签的元数据核对，不解压或执行资产。</summary>
     public static string? VerifyAsset(ReleaseInfo release, string assetPath)
     {

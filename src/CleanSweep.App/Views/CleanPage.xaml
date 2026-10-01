@@ -46,22 +46,28 @@
         </Grid>
 
         <!-- 筛选与风险分布：有结果时才显示 -->
-        <Grid Grid.Row="2" Margin="0,8,0,12" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="260"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0">
-                <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" VerticalContentAlignment="Center" AutomationProperties.Name="筛选结果"/>
-                <TextBlock Text="按名称或路径筛选…" Style="{StaticResource Text.Secondary}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
-                           Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}, ConverterParameter=invert}"/>
-            </Grid>
-            <Button Grid.Column="1" Content="清除" Style="{StaticResource Button.Link}" Command="{Binding ClearFilterCommand}" Margin="4,0,0,0"
-                    Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}}"/>
-            <TextBlock Grid.Column="2" Text="{Binding RiskSummary}" Style="{StaticResource Text.Secondary}" HorizontalAlignment="Right" VerticalAlignment="Center"
+        <StackPanel Grid.Row="2" Margin="0,8,0,12" Visibility="{Binding HasResults, Converter={StaticResource BoolToVis}}">
+            <WrapPanel>
+                <Grid Width="240" Margin="0,0,8,6">
+                    <TextBox Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" Padding="6,4" VerticalContentAlignment="Center" AutomationProperties.Name="筛选结果"/>
+                    <TextBlock Text="按名称或路径筛选…" Style="{StaticResource Text.Secondary}" Margin="9,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False"
+                               Visibility="{Binding FilterText.Length, Converter={StaticResource CountToVis}, ConverterParameter=invert}"/>
+                </Grid>
+                <ComboBox ItemsSource="{Binding RiskFilters}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                          SelectedValue="{Binding RiskFilter}" MinWidth="125" Margin="0,0,8,6"
+                          AutomationProperties.Name="按风险筛选" ToolTip="与关键字共同筛选；隐藏项保留勾选状态，本次不清理"/>
+                <TextBlock Text="组内排序" VerticalAlignment="Center" Margin="0,0,6,6"/>
+                <ComboBox ItemsSource="{Binding SortOrders}" DisplayMemberPath="Label" SelectedValuePath="Value"
+                          SelectedValue="{Binding SortOrder}" MinWidth="150" Margin="0,0,8,6" AutomationProperties.Name="组内排序"/>
+                <Button Content="清除筛选" Style="{StaticResource Button.Link}" Command="{Binding ClearFilterCommand}" Margin="0,0,0,6"
+                        Visibility="{Binding HasActiveFilter, Converter={StaticResource BoolToVis}}"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding VisibleResultsText}" FontWeight="SemiBold"/>
+            <TextBlock Text="{Binding RiskSummary, StringFormat=全部结果：{0}}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,3,0,0"
                        ToolTip="恢复上次勾选状态；没有记录或风险级别变化的项目按默认规则选择。清理前请核对已选项与风险说明。"/>
-        </Grid>
+            <TextBlock Text="没有匹配的项目，请调整关键字或风险筛选。" Style="{StaticResource Text.Secondary}" Margin="0,6,0,0"
+                       Visibility="{Binding HasNoVisibleResults, Converter={StaticResource BoolToVis}}"/>
+        </StackPanel>
 
         <!-- 结果 -->
         <Border Grid.Row="3" Style="{StaticResource Card}" Padding="0">
@@ -198,8 +204,19 @@
             <TextBlock Text="{Binding ProgressDetail}" Style="{StaticResource Text.Secondary}"/>
             <TextBlock Text="{Binding Note}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"
                        Visibility="{Binding Note, Converter={StaticResource NullToVis}}"/>
-            <TextBlock Text="{Binding LastReport}" Foreground="{StaticResource Brush.Risk.Safe}" FontWeight="SemiBold" TextWrapping="Wrap"
-                       Visibility="{Binding LastReport, Converter={StaticResource NullToVis}}"/>
+            <TextBlock Text="{Binding LastReport}" FontWeight="SemiBold" TextWrapping="Wrap"
+                       Visibility="{Binding LastReport, Converter={StaticResource NullToVis}}">
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="Foreground" Value="{StaticResource Brush.Risk.Safe}"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasReportProblems}" Value="True">
+                                <Setter Property="Foreground" Value="{StaticResource Brush.Risk.Confirm}"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+            </TextBlock>
             <Expander Header="{Binding ProblemTitle}" Margin="0,6,0,0" BorderThickness="0"
                       Visibility="{Binding ProblemDetail, Converter={StaticResource NullToVis}}">
                 <TextBox Text="{Binding ProblemDetail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12" MaxHeight="220"
