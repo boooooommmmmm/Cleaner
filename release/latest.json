@@ -1,11 +1,11 @@
 {
-  "version": "0.17.0",
-  "asset": "CleanSweep-win-x64-0.17.0.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.17.0/CleanSweep-win-x64-0.17.0.zip",
-  "sha256": "553be6c32ca45f0aff8d469cc44eb0acb7b4013eb988730a3934c375fd3d7ae0",
-  "size": 63265737,
-  "notes": "v0.17.0：新增硬件状态页（CPU、内存、ACPI 温区、NVIDIA 显卡、磁盘 S.M.A.R.T.、电池、上次内存诊断，可自动刷新）与系统自带工具入口；隔离区按磁盘概览卡，可按盘、批次、关键字筛选；清理结果每项可展开依据、影响、恢复方式、执行前核对，支持按名称或路径筛选与风险分布统计；侧栏补上图标。",
-  "generated": "2026-09-30T17:28:37Z",
+  "version": "0.18.0",
+  "asset": "CleanSweep-win-x64-0.18.0.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.18.0/CleanSweep-win-x64-0.18.0.zip",
+  "sha256": "a596b1f7ee8e6f2a6125e74af493b43ff7d1750e4ef277ea1d9a23a5210b3b18",
+  "size": 65407054,
+  "notes": "# CleanSweep v0.18.0\n\n## 新增与交互改进\n\n- 清理页面自动记住勾选与取消勾选的项目，重新扫描及重启后恢复。支持分组与批量选择；新项目、风险或操作类型变化的项目使用默认状态。\n- 重复文件支持整行选择、Ctrl 多选、Shift 连选、Ctrl+Shift 追加范围、Ctrl+A 全选、Esc 清除及标准键盘导航；支持跨重复组选择，行高亮与复选框同步。\n- 重复文件某组全部选中时显示保留副本提示并禁用隔离操作，调整选择后恢复可用。\n\n## 修复\n\n- 修复磁盘健康页分析、优化、重新修剪、碎片整理和计划检查磁盘按钮点击无响应的问题。\n- 清理执行范围与当前筛选保持一致，隐藏的勾选项不参与本次清理。\n- 隔离区“删除过期项”遵循当前磁盘、批次和搜索筛选，并使用权限回退；单项恢复与删除正确设置忙碌状态。\n- 修复健康内存诊断误报异常，以及目标风扇转速被当成实测值显示的问题。\n- 提权服务保留文件占用的真实跳过原因；修正隔离保留期、容量淘汰和备份恢复说明。\n\n## 开发与发布验证\n\n- 新增统一验证脚本和 Windows Debug / Release CI。\n- 增加界面回归测试，覆盖勾选记忆、磁盘按钮参数和重复文件选择。\n- 发布流程检查源码提交状态、程序版本，以及签名发布元数据与安装包的名称、长度和 SHA-256。\n\n## 安装与升级\n\n下载 `CleanSweep-win-x64-0.18.0.zip`，解压后运行 `CleanSweep.exe`。程序为 Windows x64 自包含版本，无需另装 .NET。\n\n已有版本可通过程序内更新检查获取新版本。实际管理员／SYSTEM 服务与完整升级回滚场景仍需在 Windows 虚拟机中进一步验收。\n",
+  "generated": "2026-10-01T15:34:41Z",
   "keyId": "release-2026-09",
-  "signature": "7lY2CNo1k5atqXAMvHufby++SqdBWVqPdO/6bTXKWSrVIvt/GgCcHYFqh91CXsrxjrZio9f5gc/b8hzmlTTmbA=="
+  "signature": "0et/Erdf7KlWQr8VzBW+ZFu70aEIT/+HnYJYcl0F5FMzJ7bkAEC1LxIfuJwG61ZZZA4mwWE3JERXxOOjX3G/CA=="
 }
