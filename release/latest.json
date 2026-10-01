@@ -1,11 +1,11 @@
 {
-  "version": "0.18.0",
-  "asset": "CleanSweep-win-x64-0.18.0.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.18.0/CleanSweep-win-x64-0.18.0.zip",
-  "sha256": "a596b1f7ee8e6f2a6125e74af493b43ff7d1750e4ef277ea1d9a23a5210b3b18",
-  "size": 65407054,
-  "notes": "# CleanSweep v0.18.0\n\n## 新增与交互改进\n\n- 清理页面自动记住勾选与取消勾选的项目，重新扫描及重启后恢复。支持分组与批量选择；新项目、风险或操作类型变化的项目使用默认状态。\n- 重复文件支持整行选择、Ctrl 多选、Shift 连选、Ctrl+Shift 追加范围、Ctrl+A 全选、Esc 清除及标准键盘导航；支持跨重复组选择，行高亮与复选框同步。\n- 重复文件某组全部选中时显示保留副本提示并禁用隔离操作，调整选择后恢复可用。\n\n## 修复\n\n- 修复磁盘健康页分析、优化、重新修剪、碎片整理和计划检查磁盘按钮点击无响应的问题。\n- 清理执行范围与当前筛选保持一致，隐藏的勾选项不参与本次清理。\n- 隔离区“删除过期项”遵循当前磁盘、批次和搜索筛选，并使用权限回退；单项恢复与删除正确设置忙碌状态。\n- 修复健康内存诊断误报异常，以及目标风扇转速被当成实测值显示的问题。\n- 提权服务保留文件占用的真实跳过原因；修正隔离保留期、容量淘汰和备份恢复说明。\n\n## 开发与发布验证\n\n- 新增统一验证脚本和 Windows Debug / Release CI。\n- 增加界面回归测试，覆盖勾选记忆、磁盘按钮参数和重复文件选择。\n- 发布流程检查源码提交状态、程序版本，以及签名发布元数据与安装包的名称、长度和 SHA-256。\n\n## 安装与升级\n\n下载 `CleanSweep-win-x64-0.18.0.zip`，解压后运行 `CleanSweep.exe`。程序为 Windows x64 自包含版本，无需另装 .NET。\n\n已有版本可通过程序内更新检查获取新版本。实际管理员／SYSTEM 服务与完整升级回滚场景仍需在 Windows 虚拟机中进一步验收。\n",
-  "generated": "2026-10-01T15:34:41Z",
+  "version": "0.19.0",
+  "asset": "CleanSweep-win-x64-0.19.0.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.19.0/CleanSweep-win-x64-0.19.0.zip",
+  "sha256": "21130f4c8a491385c8f72d321ca6cd497a69ec40529925660ab4be693e99f2ac",
+  "size": 65436310,
+  "notes": "# CleanSweep v0.19.0\n\n## 新功能\n\n- 发现新版本后先在后台下载并校验，准备好后再询问是否安装。选择稍后可在设置中安装已下载更新，缓存校验通过后可复用。\n- 清理结果支持关键字与风险组合筛选，以及组内按大小、名称、风险或扫描顺序排序。\n- 显示当前可见项数和大小；隐藏项保留勾选状态，本次清理只处理显示的选中项。\n\n## 修复与改进\n\n- 合并文件关联、App Paths 等共享注册表键的重复扫描结果，保留 COM 等独立视图。\n- 注册表目标已不存在时单独统计，并从列表移除，避免重复显示清理失败。\n- 注册表失败详情显示视图和备份阶段；有失败或未完成项时，清理摘要使用提示色。\n- 修改更新来源时取消旧下载；取消后不会继续进入安装；网络检查失败时保留已下载更新的安装入口。\n- 安装确认前核对本地发布信息签名与目标版本，安装进程仍独立复验。\n- 清理进行中禁用“忽略”操作，避免后台任务与前台列表修改交错。\n\n## 验证\n\n- 五轮代码审查，确认的 5 项 P2 问题均已修复。\n- 审查收尾验证：537 项测试通过（Core 482、App 55），Release 构建无警告、无错误。\n- Windows x64 自包含 ZIP，包含 .NET 运行时；发布信息使用现有可信密钥签名。\n\n## 更新说明\n\n旧版本可在设置中检查更新，或下载本页 ZIP。静默下载后确认安装的新流程在升级到 v0.19.0 后生效。\n\n`xmp` 注册表导出失败的现场原因尚未复现，本版不保证消除所有导出失败。真实管理员/SYSTEM 服务更新与断电恢复场景仍待专门验收。\n",
+  "generated": "2026-10-01T18:12:22Z",
   "keyId": "release-2026-09",
-  "signature": "0et/Erdf7KlWQr8VzBW+ZFu70aEIT/+HnYJYcl0F5FMzJ7bkAEC1LxIfuJwG61ZZZA4mwWE3JERXxOOjX3G/CA=="
+  "signature": "RjW5WLyKNDNeSn2Q47GgT4z+eELmTGlt15jhksmVt9cKphyFQOL0g0Hby7CBT8eeHaf6e9LquI3kXtJEKV34+g=="
 }
