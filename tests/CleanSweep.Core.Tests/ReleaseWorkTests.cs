@@ -245,10 +245,7 @@ public sealed class ReleaseWorkTests : IDisposable
 
     private static (HttpListener Listener, string BaseUrl, Task Serving) Serve(string root, CancellationToken ct)
     {
-        var port = 40000 + Random.Shared.Next(20000);
-        var listener = new HttpListener();
-        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        listener.Start();
+        var (listener, baseUrl) = TestHttpListener.Start();
         var serving = Task.Run(async () =>
         {
             while (!ct.IsCancellationRequested)
@@ -268,7 +265,7 @@ public sealed class ReleaseWorkTests : IDisposable
                 ctx.Response.Close();
             }
         });
-        return (listener, $"http://127.0.0.1:{port}", serving);
+        return (listener, baseUrl, serving);
     }
 
     [Fact]
