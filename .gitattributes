@@ -1,0 +1,6 @@
+# Signed data is hashed as bytes. Preserve existing LF/CRLF exactly during
+# checkout and staging, regardless of the contributor's core.autocrlf setting.
+/rules/** -text
+/fingerprints/** -text
+/popups/** -text
+/release/** -text
