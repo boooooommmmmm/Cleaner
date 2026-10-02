@@ -47,7 +47,9 @@ public sealed class MemoryManager
 
     // ---------- 内存状态 ----------
 
-    public static MemoryStatus GetStatus()
+    public static MemoryStatus GetStatus() => GetStatus(includeStandby: true);
+
+    public static MemoryStatus GetStatus(bool includeStandby)
     {
         var mem = new MEMORYSTATUSEX { dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>() };
         long total = 0, avail = 0;
@@ -68,6 +70,7 @@ public sealed class MemoryManager
         long standby = 0;
         try
         {
+            if (!includeStandby) return new MemoryStatus(total, avail, standby, cached, commitTotal, commitLimit);
             using var searcher = new ManagementObjectSearcher("SELECT StandbyCacheNormalPriorityBytes, StandbyCacheReserveBytes, StandbyCacheCoreBytes FROM Win32_PerfFormattedData_PerfOS_Memory");
             foreach (ManagementObject o in searcher.Get())
             {

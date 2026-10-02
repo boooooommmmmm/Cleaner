@@ -11,6 +11,7 @@ internal static class UpdateInstallGuard
         {
             var busy = item.Page switch
             {
+                QuickOptimizeViewModel page => page.IsBusy,
                 CleanPageViewModel page => page.IsBusy,
                 DuplicatesViewModel page => page.IsBusy,
                 DiskViewModel page => page.IsBusy,

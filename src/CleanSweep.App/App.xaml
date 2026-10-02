@@ -185,6 +185,9 @@
             </Style>
 
             <!-- 页面 → 视图映射 -->
+            <DataTemplate DataType="{x:Type vm:QuickOptimizeViewModel}">
+                <v:QuickOptimizePage/>
+            </DataTemplate>
             <DataTemplate DataType="{x:Type vm:CleanPageViewModel}">
                 <v:CleanPage/>
             </DataTemplate>

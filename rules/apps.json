@@ -2,6 +2,27 @@
   "version": 1,
   "rules": [
     {
+      "id": "baidu.netdisk-temp-nodes",
+      "app": "百度网盘",
+      "publisher": "Baidu",
+      "category": "app",
+      "detect": {
+        "allOf": [ { "directory": "%UserProfile%\\Documents\\BaiduNetdiskTmp" } ]
+      },
+      "targets": [
+        {
+          "path": "%UserProfile%\\Documents\\BaiduNetdiskTmp",
+          "pattern": "*.tmp.node",
+          "recurse": false,
+          "kind": "files",
+          "risk": "confirm",
+          "when": "installed",
+          "minAgeDays": 7,
+          "description": "百度网盘临时组件（超过 7 天未修改）；请退出网盘并确认无进行中的任务后再清理，可能需要重新生成或下载组件。仅处理此目录顶层的 *.tmp.node，文件移入隔离区"
+        }
+      ]
+    },
+    {
       "id": "microsoft.vscode",
       "app": "Visual Studio Code",
       "publisher": "Microsoft",

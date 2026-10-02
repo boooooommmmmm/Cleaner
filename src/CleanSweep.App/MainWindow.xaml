@@ -25,6 +25,7 @@
                 <StackPanel DockPanel.Dock="Top" Margin="20,22,20,18">
                     <TextBlock Text="CleanSweep" FontSize="20" FontWeight="Bold"/>
                     <TextBlock Text="安全优先的系统清理" Style="{StaticResource Text.Secondary}" Margin="0,2,0,0"/>
+                    <ItemsControl ItemsSource="{Binding FeaturedItems}" ItemTemplate="{StaticResource Nav.ItemTemplate}" Margin="-12,20,-12,0"/>
                 </StackPanel>
 
                 <StackPanel DockPanel.Dock="Bottom" Margin="20,0,20,16">
@@ -33,18 +34,18 @@
                     <TextBlock Text="{Binding UpdateNotice}" Foreground="{StaticResource Brush.Accent}" TextWrapping="Wrap" Margin="0,4,0,0"
                                Visibility="{Binding UpdateNotice, Converter={StaticResource NullToVis}}"/>
                     <Button Content="以管理员身份重新启动" Style="{StaticResource Button.Link}" HorizontalAlignment="Left" Margin="0,4,0,0" Padding="0"
-                            Command="{Binding RelaunchElevatedCommand}"
+                            Command="{Binding RelaunchElevatedCommand}" IsEnabled="{Binding Home.CanEditScope}"
                             Visibility="{Binding Elevation.IsElevated, Converter={StaticResource BoolToVis}, ConverterParameter=invert}"/>
                 </StackPanel>
 
                 <!-- 固定在底部、始终可见的项：隔离区（后悔药）与设置 -->
-                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,6">
+                <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,6" IsEnabled="{Binding Home.CanEditScope}">
                     <Border Height="1" Background="{StaticResource Brush.Border}" Margin="16,4,16,6"/>
                     <ItemsControl ItemsSource="{Binding PinnedItems}" ItemTemplate="{StaticResource Nav.ItemTemplate}"/>
                 </StackPanel>
 
                 <!-- 分组的导航列表：组标题可折叠，列表自己滚动，顶部标题与底部区域固定 -->
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PanningMode="VerticalOnly" IsEnabled="{Binding Home.CanEditScope}">
                     <ItemsControl ItemsSource="{Binding Groups}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="{x:Type vm:NavGroup}">

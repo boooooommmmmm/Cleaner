@@ -114,6 +114,9 @@ public sealed class RuleScanner : IScanner
                     // path 直接指向单个文件（如 %Windir%\MEMORY.DMP）
                     var fi = new FileInfo(expandedPath);
                     if (PathGuard.IsReparsePoint(fi.Attributes) || PathGuard.IsCloudPlaceholder(fi.Attributes)) return null;
+                    // 单文件仍须遵守模式和排除规则，不能因目录位置被同名文件替代而扩大范围。
+                    if (!PathGuard.MatchesAny(fi.Name, PathGuard.ParsePatterns(target.Pattern))) return null;
+                    if (target.Exclude.Count > 0 && PathGuard.MatchesAny(fi.Name, target.Exclude.ToArray())) return null;
                     // 单文件目标与目录目标使用同一套年龄策略
                     if (cutoff is not null && fi.LastWriteTimeUtc >= cutoff) return null;
                     files = new List<FileEntry> { new(fi.FullName, fi.Length, fi.LastWriteTimeUtc) };

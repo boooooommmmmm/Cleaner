@@ -142,7 +142,7 @@ public sealed class CleanEngine
             }
 
             // 预动作去重后各执行一次。失败的动作记入 failedActions，依赖它的项目跳过
-            foreach (var action in items.SelectMany(i => i.PreActions).Distinct(StringComparer.OrdinalIgnoreCase))
+            foreach (var action in items.Where(i => !IsExcluded(i)).SelectMany(i => i.PreActions).Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 ct.ThrowIfCancellationRequested();
                 var handle = _preActions.Run(action, out var err);
@@ -173,9 +173,9 @@ public sealed class CleanEngine
                 {
                     Fail(report, batchId, item, item.Path, $"前置动作失败（{blocked}），跳过以免破坏正在使用的文件");
                 }
-                else if (_whitelist is not null && _whitelist.IsItemExcluded(item.Id))
+                else if (IsExcluded(item))
                 {
-                    Skip(report, batchId, item, item.Path, "项目已在白名单");
+                    Skip(report, batchId, item, item.Path, "项目、规则或目标路径已在白名单");
                 }
                 else
                 {
@@ -204,6 +204,10 @@ public sealed class CleanEngine
 
         return report;
     }
+
+    private bool IsExcluded(ScanItem item) => _whitelist is not null && (_whitelist.IsItemExcluded(item.Id)
+        || item.RuleId is { } rule && _whitelist.IsRuleExcluded(rule)
+        || item.Path is { } path && _whitelist.IsPathExcluded(path));
 
     private static bool OrphanStillEligible(ScanItem item, IReadOnlyList<ScanItem> current)
     {

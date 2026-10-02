@@ -53,6 +53,8 @@ public sealed partial class ShellViewModel : ObservableObject
     private readonly AppServices _s;
     private readonly CleanPageViewModel _residuePage;
     private readonly CleanPageViewModel _orphanPage;
+    public QuickOptimizeViewModel Home { get; }
+    public ObservableCollection<NavItem> FeaturedItems { get; } = new();
 
     /// <summary>全部导航项（含固定项），按加入顺序；"跳转到某页"按标题在这里找。</summary>
     public ObservableCollection<NavItem> Items { get; } = new();
@@ -95,7 +97,7 @@ public sealed partial class ShellViewModel : ObservableObject
     [RelayCommand]
     private void RelaunchElevated()
     {
-        if (Elevation.IsElevated) return;
+        if (Elevation.IsElevated || Home.IsBusy) return;
         var err = ElevationContext.RelaunchElevated();
         if (err is not null)
         {
@@ -108,6 +110,10 @@ public sealed partial class ShellViewModel : ObservableObject
     public ShellViewModel(AppServices s)
     {
         _s = s;
+        Home = new QuickOptimizeViewModel(s,
+            () => s.AppUpdates.InstallationStarted ? "程序正在准备安装更新"
+                : s.IsUpdatingData ? "规则库正在更新" : UpdateInstallGuard.BlockReason(Items.Where(i => i.Page != Home)), NavigateTo);
+        Add(new NavItem { Group = "首页", Title = "一键优化", Glyph = "", Page = Home });
         s.AppUpdates.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(AppUpdateCoordinator.Status)) UpdateNotice = s.AppUpdates.Status;
@@ -210,6 +216,7 @@ public sealed partial class ShellViewModel : ObservableObject
     /// <summary>切到残留清理页并针对某个应用做定向扫描。</summary>
     public void ScanResidueFor(string appName)
     {
+        if (Home.IsBusy) return;
         _s.ResidueOptions.OnlyAppName = appName;
         NavigateTo("残留清理");
         if (_residuePage.ScanCommand.CanExecute(null)) _residuePage.ScanCommand.Execute(null);
@@ -217,12 +224,14 @@ public sealed partial class ShellViewModel : ObservableObject
 
     public void NavigateTo(string title)
     {
+        if (Home.IsBusy && title != "一键优化") return;
         var item = Items.FirstOrDefault(i => i.Title == title);
         if (item is not null) item.IsSelected = true;
     }
 
     public void ScanOrphansFor(IReadOnlyCollection<string> appNames)
     {
+        if (Home.IsBusy) return;
         var names = appNames.Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         if (names.Length == 0) return;
         var label = "当前仅预览：" + string.Join("、", names) + "。每次扫描后均需重新勾选。";
@@ -242,6 +251,7 @@ public sealed partial class ShellViewModel : ObservableObject
         var appNames = removed.Select(a => a.Name).ToArray();
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {
+            if (Home.IsBusy) return; // 卸载记录仍保留，完成后可从僵尸目录页预览。
             var names = string.Join("、", removed.Select(a => a.Name).Take(3)) + (removed.Count > 3 ? $" 等 {removed.Count} 个应用" : "");
             var r = MessageBox.Show($"检测到“{names}”已卸载。现在预览这些软件的缓存和空目录残留？\n\n预览不会自动清理；个人数据目录保留。", "卸载后残留提醒", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (r == MessageBoxResult.Yes) ScanOrphansFor(appNames);
@@ -252,6 +262,7 @@ public sealed partial class ShellViewModel : ObservableObject
     {
         item.PropertyChanged += OnNavItemChanged;
         Items.Add(item);
+        if (item.Group == "首页") { FeaturedItems.Add(item); return; }
         if (item.Group == NavGroup.Pinned)
         {
             PinnedItems.Add(item);

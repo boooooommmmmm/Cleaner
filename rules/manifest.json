@@ -1,13 +1,13 @@
 {
   "kind": "rules",
-  "version": 5,
-  "generated": "2026-09-30T06:43:12Z",
+  "version": 6,
+  "generated": "2026-10-02T14:40:59Z",
   "files": {
-    "apps.json": "e9c7dd4c29dcc7a978aa913746b52849241690a72e9a87f723c9938f2d92253d",
+    "apps.json": "2e5b3fa0da55ee909a8466097008037c0c49780d88d3ef5f5eb78e2c89eee650",
     "browsers.json": "3c030fc5cbb816a43fdd8ef2bff54f26a4919fc4cbff388ddfe874d38cbd271d",
     "dev.json": "b859f1c4e949364418392684b79cacb45adfa7e017581c62a637f82ccc605d45",
     "system.json": "0e3bc2c1eea18d452e616f4a261023b552021cff3638170981a83bbfb41f5643"
   },
   "keyId": "release-2026-09",
-  "signature": "slIbvGPnbm6XLmW34YzOD0FvGAtw2vsr2fBsPLoZpwZLT42zGLv9DGsJlTGYVRkKfdbXhCAgjV7TkxkHlY2/xw=="
+  "signature": "g6Oc6/a8D8inxuXNWsB6XgBCsnL9tNi/kIkpZVTu1dZ4KYHFW0nl7pRZU/QVJsodflP\u002BNfB1On1mlzT1b\u002Blgeg=="
 }

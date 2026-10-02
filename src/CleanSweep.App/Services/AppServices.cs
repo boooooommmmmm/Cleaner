@@ -44,6 +44,7 @@ public sealed class AppServices
 
     private AppUpdateCoordinator? _appUpdates;
     private readonly SemaphoreSlim _dataUpdateGate = new(1, 1);
+    public bool IsUpdatingData => _dataUpdateGate.CurrentCount == 0;
     public Func<string?> UpdateInstallBlocker { get; set; } = () => "界面正在初始化";
     public AppUpdateCoordinator AppUpdates => _appUpdates ??= new AppUpdateCoordinator(
         CheckAppUpdateAsync, (release, progress, ct) => DownloadAppUpdateAsync(release, progress, ct),
