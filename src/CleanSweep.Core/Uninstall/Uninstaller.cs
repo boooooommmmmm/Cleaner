@@ -187,7 +187,7 @@ public sealed partial class Uninstaller
 
         string message;
         if (!completed) message = "已停止等待，卸载程序仍在运行；完成后请刷新列表。";
-        else if (!still) message = $"“{app.Name}”已卸载（退出码 {exitCode}）。可在“残留清理”中查看它遗留的用户数据。";
+        else if (!still) message = $"“{app.Name}”已卸载（退出码 {exitCode}）。可预览缓存和空目录残留。";
         else if (exitCode == 1602 || exitCode == 1223) message = "用户取消了卸载。";
         else if (exitCode == 3010 || exitCode == 1641) message = "卸载完成，需要重启后生效。";
         else message = $"卸载程序已退出（退出码 {exitCode}），但应用仍在清单中；可能需要重启，或卸载程序未真正执行。";

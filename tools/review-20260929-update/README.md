@@ -1,6 +1,6 @@
 # 更新代码复审的独立探针
 
-日期：2026-09-29。对应报告：[更新代码复审](../../docs/更新代码复审-2026-09-29.md)。
+日期：2026-09-29。对应报告：[更新代码复审](../../docs/archive/更新代码复审-2026-09-29.md)。
 
 本项目不在 CleanSweep.slnx 中，不修改产品实现。它直接引用当前 Core，并链接原测试工程的 TestEnv。为访问已有 InternalsVisibleTo，程序集名使用 CleanSweep.Core.Tests；输出目录与原测试工程独立。
 
@@ -37,4 +37,3 @@ R08/R13/R14/R15 是报告中的静态审查结论，不运行真实卷擦除、�
 - results/baseline.trx：原有正式测试，324 通过。
 - results/review-probes.trx：本项目 12 个缺陷复现结果。
 - source-hashes.json：本轮开始时 155 个源码/规则/原测试文件的 SHA-256；结束时比较一致。
-

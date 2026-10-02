@@ -203,7 +203,8 @@ public sealed class ElevatedOperations : IElevatedOperations
                 var reason = state == StateDone ? null : report.Failures.FirstOrDefault(f => f.ItemId == item.Id)?.Reason
                     ?? report.InUseFiles.FirstOrDefault(f => f.ItemId == item.Id)?.Reason
                     ?? (state == StateSkipped ? "有文件被跳过（已变化或在白名单中）" : null);
-                results[item.Id] = new ItemResult(item.Id, state, reason);
+                var issue = report.Failures.Concat(report.InUseFiles).Concat(report.SkippedDetails).FirstOrDefault(f => f.ItemId == item.Id);
+                results[item.Id] = new ItemResult(item.Id, state, issue?.Reason ?? reason, issue?.Kind);
             }
         }
 
@@ -234,7 +235,7 @@ public sealed class ElevatedOperations : IElevatedOperations
     }
 
     /// <summary>每个请求条目的明确结果：done / changed / skipped / failed / notfound / nosnapshot。</summary>
-    public sealed record ItemResult(string ItemId, string State, string? Reason);
+    public sealed record ItemResult(string ItemId, string State, string? Reason, CleanIssueKind? Kind = null);
 
     /// <summary>提权服务执行结果的载荷。</summary>
     public sealed record RuleCleanPayload(long QuarantinedBytes, int Files, int Directories, ItemResult[] Results, FailureDto[] Failures)

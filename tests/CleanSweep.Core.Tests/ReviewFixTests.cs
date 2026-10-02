@@ -15,7 +15,7 @@ using Microsoft.Win32;
 namespace CleanSweep.Core.Tests;
 
 /// <summary>
-/// 2026-09-29 全量审查（docs/全量审查-2026-09-29.md）F02–F16 的回归基线：把审查工程里"复现缺陷即通过"的探针反转为"缺陷不再出现"。
+/// 2026-09-29 全量审查（docs/archive/全量审查-2026-09-29.md）F02–F16 的回归基线：把审查工程里"复现缺陷即通过"的探针反转为"缺陷不再出现"。
 /// </summary>
 public sealed class ReviewFixTests : IDisposable
 {

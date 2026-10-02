@@ -22,6 +22,10 @@
             <TextBlock Text="自动记住勾选状态，下次扫描时恢复；新项目按默认规则选择。" Style="{StaticResource Text.Secondary}" Margin="0,4,0,0"/>
             <TextBlock Text="{Binding SelectionSaveError}" Foreground="{StaticResource Brush.Risk.Confirm}" TextWrapping="Wrap"
                        Visibility="{Binding SelectionSaveError, Converter={StaticResource NullToVis}}"/>
+            <WrapPanel Visibility="{Binding HasScanScope, Converter={StaticResource BoolToVis}}" Margin="0,8,0,0">
+                <TextBlock Text="{Binding ScanScopeText}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="720"/>
+                <Button Content="扫描全部应用残留" Command="{Binding ScanAllCommand}" Margin="12,0,0,0"/>
+            </WrapPanel>
         </StackPanel>
 
         <!-- 工具栏 -->
@@ -217,10 +221,34 @@
                     </Style>
                 </TextBlock.Style>
             </TextBlock>
-            <Expander Header="{Binding ProblemTitle}" Margin="0,6,0,0" BorderThickness="0"
-                      Visibility="{Binding ProblemDetail, Converter={StaticResource NullToVis}}">
-                <TextBox Text="{Binding ProblemDetail, Mode=OneWay}" IsReadOnly="True" TextWrapping="Wrap" FontSize="12" MaxHeight="220"
-                         VerticalScrollBarVisibility="Auto" BorderThickness="0" Background="Transparent" Margin="0,4,0,0"/>
+            <WrapPanel Margin="0,6,0,0" Visibility="{Binding HasExecutionReport, Converter={StaticResource BoolToVis}}">
+                <Button Content="重新扫描未完成项" Command="{Binding RescanIncompleteCommand}" Margin="0,0,8,0"
+                        ToolTip="重新运行本页扫描，仅展示原未完成项目的最新结果；全部取消勾选，确认后再清理。"/>
+                <Button Content="导出全部结果" Command="{Binding ExportReportCommand}"/>
+            </WrapPanel>
+            <TextBlock Text="{Binding ReportActionStatus}" TextWrapping="Wrap" Style="{StaticResource Text.Secondary}"/>
+            <Expander Header="上次清理结果与处理建议" Margin="0,6,0,0" BorderThickness="0"
+                      Visibility="{Binding HasExecutionReport, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                    <ComboBox ItemsSource="{Binding ReportFilters}" SelectedItem="{Binding ReportFilter}"
+                              DisplayMemberPath="Label" Width="180" HorizontalAlignment="Left"
+                              AutomationProperties.Name="清理结果分类"/>
+                    <TextBlock Text="{Binding ReportCountText}" Style="{StaticResource Text.Secondary}" Margin="0,4"/>
+                    <DataGrid ItemsSource="{Binding ReportRows}" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" MaxHeight="220" MinHeight="80" EnableRowVirtualization="True"
+                              HeadersVisibility="Column" AutomationProperties.Name="上次清理结果">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="分类" Binding="{Binding Category}" Width="100"/>
+                            <DataGridTextColumn Header="项目" Binding="{Binding Name}" Width="150"/>
+                            <DataGridTextColumn Header="路径" Binding="{Binding Path}" Width="220"/>
+                            <DataGridTextColumn Header="原因" Binding="{Binding Reason}" Width="300"/>
+                            <DataGridTextColumn Header="下一步" Binding="{Binding NextStep}" Width="350"/>
+                            <DataGridTextColumn Header="错误码" Binding="{Binding ErrorCode}" Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock Text="导出包含本机路径和全部已返回结果，分享前请检查。提权服务可能仅返回项目摘要，范围说明会一并导出。"
+                               Style="{StaticResource Text.Secondary}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                </StackPanel>
             </Expander>
         </StackPanel>
     </Grid>

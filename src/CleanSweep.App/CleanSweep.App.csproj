@@ -10,7 +10,7 @@
     <RootNamespace>CleanSweep.App</RootNamespace>
     <AssemblyName>CleanSweep</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <Version>0.20.0</Version>
+    <Version>0.21.0</Version>
     <Product>CleanSweep</Product>
     <Company>CleanSweep</Company>
     <SatelliteResourceLanguages>zh-Hans;en</SatelliteResourceLanguages>

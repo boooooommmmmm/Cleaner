@@ -111,7 +111,9 @@ public sealed class AppServices
             log.Write(null, "app", "migrate-data", migratedFrom, 0, true, $"数据目录已迁移到 {AppPaths.DataDir}，修正 {n} 条备份索引");
         }
         var registryOps = new RegistryOps(registryBackup);
-        var engine = new CleanEngine(guard, quarantine, log, preActions, whitelist, registryOps);
+        AppServices? services = null;
+        var engine = new CleanEngine(guard, quarantine, log, preActions, whitelist, registryOps,
+            ct => services!.CreateOrphanDirectoryScanners()[0].ScanAsync(services.CreateScanContext(), null, ct));
         var restorePoints = new RestorePointService();
         var startup = new StartupManager(env, registryBackup, restorePoints, quarantine, log)
         {
@@ -124,7 +126,7 @@ public sealed class AppServices
         };
         var history = new UninstallHistory(db);
 
-        var services = new AppServices
+        services = new AppServices
         {
             Env = env,
             Guard = guard,
@@ -303,6 +305,12 @@ public sealed class AppServices
                 (source, msg) => Log.Write(null, ResidueScanner.ModuleId, "scan-note", source, 0, true, msg)),
         };
     }
+
+    public IScanner[] CreateOrphanDirectoryScanners() =>
+        [new OrphanDirectoryScanner(ct => Inventory.Scan(ct), Fingerprints, UninstallHistory)];
+
+    public IScanner[] CreateOrphanDirectoryScanners(IReadOnlyCollection<string> appNames) =>
+        [new OrphanDirectoryScanner(ct => Inventory.Scan(ct), Fingerprints, UninstallHistory, appNames)];
 
     public IScanner[] CreateDevCacheScanners() => new IScanner[]
     {

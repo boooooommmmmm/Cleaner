@@ -81,7 +81,7 @@ public sealed class ReviewRound2Tests : IDisposable
 
         // 扫描后软件"重新安装"，值被改写
         using (var k = Registry.CurrentUser.CreateSubKey($@"{TestRoot}\{_name}\Del")) k.SetValue("orphan", @"C:\back\app.exe");
-        var ex = Assert.Throws<InvalidOperationException>(() => Ops().DeleteValue(target, "test", snapshot));
+        var ex = Assert.Throws<CleanSweep.Core.Cleaning.CleanTargetChangedException>(() => Ops().DeleteValue(target, "test", snapshot));
         Assert.Contains("扫描后发生变化", ex.Message);
         using (var k = Registry.CurrentUser.OpenSubKey($@"{TestRoot}\{_name}\Del")!) Assert.Equal(@"C:\back\app.exe", k.GetValue("orphan"));
 

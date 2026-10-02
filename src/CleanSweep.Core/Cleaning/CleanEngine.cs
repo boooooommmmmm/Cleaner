@@ -10,7 +10,8 @@ namespace CleanSweep.Core.Cleaning;
 /// <summary>ProcessedBytes：已处理的字节数（移入隔离区 + 直接释放），用于进度显示。</summary>
 public sealed record CleanProgress(string CurrentItem, int Done, int Total, long ProcessedBytes);
 
-public sealed record CleanFailure(string ItemId, string ItemDisplayName, string? Path, string Reason);
+public sealed record CleanFailure(string ItemId, string ItemDisplayName, string? Path, string Reason,
+    CleanIssueKind Kind = CleanIssueKind.Failure, int? ErrorCode = null);
 
 /// <summary>单个条目的处理结果：成功、已不存在、跳过、失败的计数，界面据此决定该行是移除还是保留。</summary>
 public sealed class ItemOutcome
@@ -59,6 +60,7 @@ public sealed class CleanReport
     public List<CleanFailure> InUseFiles { get; } = new();
 
     public List<CleanFailure> Failures { get; } = new();
+    public List<CleanFailure> SkippedDetails { get; } = new();
     public TimeSpan Elapsed { get; set; }
 
     /// <summary>是否因取消而中止。已处理的文件在隔离区，未处理的条目 Outcome 为 Untouched。</summary>
@@ -97,8 +99,10 @@ public sealed class CleanEngine
     private readonly IPreActionRunner _preActions;
     private readonly Whitelist? _whitelist;
     private readonly RegistryCleaning.RegistryOps? _registry;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<ScanItem>>>? _orphanRecheck;
 
-    public CleanEngine(PathGuard guard, Quarantine quarantine, OperationLog log, IPreActionRunner preActions, Whitelist? whitelist = null, RegistryCleaning.RegistryOps? registry = null)
+    public CleanEngine(PathGuard guard, Quarantine quarantine, OperationLog log, IPreActionRunner preActions, Whitelist? whitelist = null, RegistryCleaning.RegistryOps? registry = null,
+        Func<CancellationToken, Task<IReadOnlyList<ScanItem>>>? orphanRecheck = null)
     {
         _guard = guard;
         _quarantine = quarantine;
@@ -106,6 +110,7 @@ public sealed class CleanEngine
         _preActions = preActions;
         _whitelist = whitelist;
         _registry = registry;
+        _orphanRecheck = orphanRecheck;
     }
 
     public async Task<CleanReport> CleanAsync(IReadOnlyList<ScanItem> items, IProgress<CleanProgress>? progress, CancellationToken ct)
@@ -124,6 +129,18 @@ public sealed class CleanEngine
         var failedActions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         try
         {
+            IReadOnlyList<ScanItem> currentOrphans = [];
+            string orphanReason = "卸载残留依据已变化或无法复核，请重新扫描";
+            if (items.Any(i => i.ModuleId == Residue.OrphanDirectoryScanner.ModuleId) && _orphanRecheck is not null)
+            {
+                try { currentOrphans = await _orphanRecheck(ct).ConfigureAwait(false); }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex)
+                {
+                    orphanReason = "无法复核卸载残留，已保留原文件：" + ex.Message;
+                }
+            }
+
             // 预动作去重后各执行一次。失败的动作记入 failedActions，依赖它的项目跳过
             foreach (var action in items.SelectMany(i => i.PreActions).Distinct(StringComparer.OrdinalIgnoreCase))
             {
@@ -148,7 +165,11 @@ public sealed class CleanEngine
                 progress?.Report(new CleanProgress(item.DisplayName, done, items.Count, report.ProcessedBytes));
 
                 var blocked = item.PreActions.FirstOrDefault(failedActions.Contains);
-                if (blocked is not null)
+                if (item.ModuleId == Residue.OrphanDirectoryScanner.ModuleId && !OrphanStillEligible(item, currentOrphans))
+                {
+                    Skip(report, batchId, item, item.Path, orphanReason, CleanIssueKind.Changed);
+                }
+                else if (blocked is not null)
                 {
                     Fail(report, batchId, item, item.Path, $"前置动作失败（{blocked}），跳过以免破坏正在使用的文件");
                 }
@@ -169,7 +190,7 @@ public sealed class CleanEngine
         {
             report.Cancelled = true;
             _log.Write(batchId, "engine", "cancel", null, 0, true, "用户取消，已处理的文件在隔离区");
-            throw;
+            throw new CleanCancelledException(report, ct);
         }
         finally
         {
@@ -182,6 +203,17 @@ public sealed class CleanEngine
         }
 
         return report;
+    }
+
+    private static bool OrphanStillEligible(ScanItem item, IReadOnlyList<ScanItem> current)
+    {
+        var fresh = current.FirstOrDefault(i => i.Id == item.Id && i.ModuleId == item.ModuleId && i.Kind == item.Kind
+            && string.Equals(i.Path, item.Path, StringComparison.OrdinalIgnoreCase));
+        if (fresh is null) return false;
+        if (item.Kind == ItemKind.Directory) return fresh.DirectoryFileCount == 0 && fresh.SizeBytes == 0;
+        if (item.Kind != ItemKind.FileSet) return false;
+        var allowed = fresh.Files.Select(f => f.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return item.Files.All(f => allowed.Contains(f.Path));
     }
 
     private void CleanItem(ScanItem item, string batchId, CleanReport report, CancellationToken ct)
@@ -249,11 +281,12 @@ public sealed class CleanEngine
         {
             report.Outcome(item).AlreadyAbsent++;
             report.RegistryEntriesAlreadyAbsent++;
+            report.SkippedDetails.Add(new(item.Id, item.DisplayName, target, ex.Message, CleanIssueKind.AlreadyAbsent));
             _log.Write(batchId, item.ModuleId, "already-absent", target, 0, true, ex.Message);
         }
         catch (Exception ex)
         {
-            Fail(report, batchId, item, target, ex.Message);
+            FailException(report, batchId, item, target, ex);
         }
     }
 
@@ -287,12 +320,12 @@ public sealed class CleanEngine
                     fi = new FileInfo(f.Path);
                     if (!fi.Exists)
                     {
-                        Skip(report, batchId, item, f.Path, "文件已不存在");
+                        Skip(report, batchId, item, f.Path, "文件已不存在", CleanIssueKind.AlreadyAbsent);
                         continue;
                     }
                     if (fi.Length != f.Size || fi.LastWriteTimeUtc != f.LastWriteUtc)
                     {
-                        Skip(report, batchId, item, f.Path, "文件在扫描后发生变化");
+                        Skip(report, batchId, item, f.Path, "文件在扫描后发生变化", CleanIssueKind.Changed);
                         continue;
                     }
                     if (PathGuard.IsReparsePoint(fi.Attributes) || PathGuard.IsCloudPlaceholder(fi.Attributes))
@@ -303,7 +336,7 @@ public sealed class CleanEngine
                 }
                 catch (Exception ex)
                 {
-                    Fail(report, batchId, item, f.Path, ex.Message);
+                    FailException(report, batchId, item, f.Path, ex);
                     continue;
                 }
 
@@ -339,7 +372,7 @@ public sealed class CleanEngine
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
-                    Fail(report, batchId, item, f.Path, ex.Message);
+                    FailException(report, batchId, item, f.Path, ex);
                 }
             }
         }
@@ -409,7 +442,7 @@ public sealed class CleanEngine
 
         if (!Directory.Exists(item.Path))
         {
-            Skip(report, batchId, item, item.Path, "目录已不存在");
+            Skip(report, batchId, item, item.Path, "目录已不存在", CleanIssueKind.AlreadyAbsent);
             return;
         }
 
@@ -444,7 +477,7 @@ public sealed class CleanEngine
                                      || (last is not null && item.LastWriteUtc is not null && last > item.LastWriteUtc);
         if (changed)
         {
-            Fail(report, batchId, item, item.Path, $"目录内容在扫描后发生变化（现为 {count:N0} 个文件），请重新扫描");
+            Fail(report, batchId, item, item.Path, $"目录内容在扫描后发生变化（现为 {count:N0} 个文件），请重新扫描", CleanIssueKind.Changed);
             return;
         }
 
@@ -458,6 +491,12 @@ public sealed class CleanEngine
         ct.ThrowIfCancellationRequested();
         try
         {
+            // Empty subdirectories and reparse children are not represented in the file fingerprint.
+            if (item.ModuleId == Residue.OrphanDirectoryScanner.ModuleId && Directory.EnumerateFileSystemEntries(item.Path).Any())
+            {
+                Skip(report, batchId, item, item.Path, "空目录已出现内容，请重新扫描", CleanIssueKind.Changed);
+                return;
+            }
             _quarantine.MoveIn(item.Path, isDirectory: true, item.SizeBytes, item.ModuleId, batchId, item.DisplayName);
             report.QuarantinedBytes += item.SizeBytes;
             report.DirectoriesQuarantined++;
@@ -470,7 +509,7 @@ public sealed class CleanEngine
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            Fail(report, batchId, item, item.Path, ex.Message);
+            FailException(report, batchId, item, item.Path, ex);
         }
     }
 
@@ -554,14 +593,15 @@ public sealed class CleanEngine
         }
         catch (Exception ex)
         {
-            Fail(report, batchId, item, item.Command, ex.Message);
+            FailException(report, batchId, item, item.Command, ex);
         }
     }
 
-    private void Fail(CleanReport report, string batchId, ScanItem item, string? path, string reason)
+    private void Fail(CleanReport report, string batchId, ScanItem item, string? path, string reason,
+        CleanIssueKind kind = CleanIssueKind.Failure, int? errorCode = null)
     {
         reason = StripPathSuffix(reason, path);
-        report.Failures.Add(new CleanFailure(item.Id, item.DisplayName, path, reason));
+        report.Failures.Add(new CleanFailure(item.Id, item.DisplayName, path, reason, kind, errorCode));
         report.Outcome(item).Failed++;
         _log.Write(batchId, item.ModuleId, "fail", path, 0, false, reason);
     }
@@ -571,7 +611,7 @@ public sealed class CleanEngine
     {
         const string reason = "正在被其他程序使用，这次跳过";
         report.InUse++;
-        report.InUseFiles.Add(new CleanFailure(item.Id, item.DisplayName, path, reason));
+        report.InUseFiles.Add(new CleanFailure(item.Id, item.DisplayName, path, reason, CleanIssueKind.InUse));
         report.Outcome(item).Skipped++;
         _log.Write(batchId, item.ModuleId, "skip", path, 0, true, reason);
     }
@@ -589,12 +629,18 @@ public sealed class CleanEngine
         return reason;
     }
 
-    private void Skip(CleanReport report, string batchId, ScanItem item, string? path, string reason)
+    private void Skip(CleanReport report, string batchId, ScanItem item, string? path, string reason,
+        CleanIssueKind kind = CleanIssueKind.Excluded)
     {
         report.Skipped++;
         report.Outcome(item).Skipped++;
+        report.SkippedDetails.Add(new(item.Id, item.DisplayName, path, reason, kind));
         _log.Write(batchId, item.ModuleId, "skip", path, 0, true, reason);
     }
 
     private static string Tail(string s) => s.Length <= 400 ? s.Trim() : s[^400..].Trim();
+
+    private void FailException(CleanReport report, string batchId, ScanItem item, string? path, Exception ex) =>
+        Fail(report, batchId, item, path, ex.Message, CleanIssueClassifier.FromException(ex),
+            ex is System.ComponentModel.Win32Exception native ? native.NativeErrorCode : ex.HResult);
 }

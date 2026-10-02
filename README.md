@@ -4,7 +4,13 @@
 
 ## 当前状态
 
-设计文档第 8 节的 M1 到 M6 已全部实现，发布前的横切工作（普通权限运行 + 提权服务、数据集签名与在线更新、自包含发布、安装脚本）也已完成；数据集与发布信息已用正式密钥（release-2026-09）签名，首个版本 v0.15.0 已发布到 GitHub Release；仍缺的是 EV 代码签名证书与在虚拟机以管理员身份做的端到端验收（见“已知限制”与“发布”）。对应功能：
+截至 2026-10-02，已发布版本为 **v0.20.0**。系统清理、残留与注册表检查、隔离区、系统工具和自动更新等功能已实现。发布包与公开更新清单已验证；真实管理员 / SYSTEM 升级、安装回滚和断电恢复仍需专门验收。
+
+入口：[文档索引](docs/README.md) · [当前状态](docs/当前状态.md) · [后续开发计划](docs/后续开发计划.md) · [发布流程](docs/发布流程.md) · [v0.20.0 发布验收](docs/releases/发布验收-v0.20.0.md)。
+
+工作区另已实现尚未发布的[清理结果分类、重新扫描与导出](docs/清理结果处理-2026-10-02.md)、[僵尸目录清理](docs/可清理范围与僵尸目录-2026-10-02.md)和[卸载后定向预览](docs/卸载后定向预览-2026-10-02.md)：有卸载记录的已知缓存、日志与空目录，限定当前用户 AppData，支持按卸载应用预览，清理前重新核对。当前 Release 验证为 602 项通过；已发布包仍为下述 v0.20.0 基线。
+
+当前功能：
 
 | 模块 | 状态 |
 |---|---|
@@ -39,7 +45,7 @@
 | 硬件状态（CPU 占用、内存、ACPI 温区、NVIDIA 显卡占用 / 温度 / 显存 / 风扇、磁盘 S.M.A.R.T.、电池、上次内存诊断结果；可自动刷新）与系统自带工具入口（内存诊断、资源监视器、可靠性历史、事件查看器、设备管理器等） | 可用，只读、不装驱动 |
 | 规则库（74 条）/ 指纹库 / 弹窗规则签名校验与在线更新（ECDSA P-256 签名清单，只加载清单内哈希一致的文件；https 更新渠道，版本只升不降） | 可用（正式密钥 release-2026-09） |
 | 程序自更新（GitHub Release；安装目录里的程序复验签名后事务式替换，失败自动还原；默认来源官方仓库，GitHub 直连失败自动改用镜像） | 可用，0.15.0 → 0.16.0 已在本机真实跑通；管理员 / 提权服务场景待虚拟机验证 |
-| 文件恢复、软件搬家、桌面整理 | 不做（原因见设计文档 v0.12 变更记录） |
+| 文件恢复、软件搬家、桌面整理 | 不做（见产品设计的范围约束） |
 
 ## 环境要求
 
@@ -57,12 +63,12 @@ dotnet run --project src/CleanSweep.App
 
 ### 开发验证与持续集成
 
-新增统一验收入口（Windows PowerShell 5.1 / PowerShell 7 均可），会检查版本一致性、无警告构建、核心与界面模型测试，以及三个数据集和发布信息的公开签名：
+统一验收入口（Windows PowerShell 5.1 / PowerShell 7 均可）检查版本一致性、无警告构建、核心与界面模型测试，以及三个数据集和发布信息的公开签名：
 
 ```powershell
 powershell -NoProfile -File tools/verify.ps1 -Configuration Release
 # 可选：同时核对本地发布目录的安装清单、二进制版本和 ZIP 的签名/大小/哈希
-powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir publish/win-x64 -ReleaseZip publish/CleanSweep-win-x64-0.19.0.zip
+powershell -NoProfile -File tools/verify.ps1 -Configuration Release -PackageDir publish/win-x64 -ReleaseZip publish/CleanSweep-win-x64-0.20.0.zip
 ```
 
 结果保存在 `artifacts/verification/<配置>/`（JSON 摘要和 TRX）。GitHub Actions 对 push / pull_request 使用相同入口运行 Debug、Release，两端均只用公钥验签。验证不读取私钥或发布令牌，不安装服务，也不发布版本；真实管理员/SYSTEM 场景仍需虚拟机验收。
@@ -88,27 +94,22 @@ iscc installer\CleanSweep.iss                 # 或用 Inno Setup 6 生成安装
 powershell -File tools/uninstall.ps1 [-RemoveData]
 ```
 
-正式发布前还要做两件事，仓库里没有也不应有：
+### 签名状态
 
-- **代码签名**：用 EV 证书对 CleanSweep.exe、CleanSweep.Service.exe、CleanSweep.Core.dll 与安装器签名。未签名时服务的 `--install` 会自动把 `RequireSignedClient` 关掉，管道只剩 SID 与路径校验。
-- **数据签名密钥**：私钥不在仓库里（`%USERPROFILE%\.cleansweep\keys\release-signing-key.pem`，用 `CleanSweep.SignData keygen` 生成，务必另存离线备份，丢了就无法再发布更新）。只有持有该私钥的人签出的规则库、指纹库、弹窗规则与发布信息会被程序接受；公钥在 `Integrity/TrustedKeys.cs`。
+- 数据集与程序更新清单已使用正式 ECDSA 密钥签名；私钥在仓库外，公开验签使用 `Integrity/TrustedKeys.cs`。
+- Windows 可执行文件的代码签名证书仍待配置。未签名构建安装服务时会关闭 `RequireSignedClient`，仍保留 SID 与程序路径校验。此状态与数据集签名分开记录。
+- 发布步骤、资产检查和更新清单推送顺序统一见[发布流程](docs/发布流程.md)。
 
 ## 自动更新（GitHub 仓库作为更新来源）
 
-设置页"更新来源"默认是官方仓库 `boooooommmmmm/Cleaner`（v0.16.1 起；此前默认为空，装好后从不检查更新），可改成其他 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西。GitHub 仓库形式在 raw.githubusercontent.com 连不上时会自动改用 jsDelivr 镜像再试一次（镜像只是搬运，签名与哈希校验不变）。启动检查发现新版本后先静默下载并校验，完成后询问是否安装；选择稍后可在设置页点“安装已下载更新”。0.15.0 → 0.16.0 的完整流程（下载、校验、安装目录里的程序复验并替换、以新版本重启）已在本机真实跑通。
+设置页"更新来源"默认是官方仓库 `boooooommmmmm/Cleaner`，可改成其他 GitHub 仓库 `owner/repo`（默认 main 分支，可写 `owner/repo@branch`）或任意 https 根地址，程序从这里取两样东西。GitHub 仓库形式在 raw.githubusercontent.com 连不上时会自动改用 jsDelivr 镜像再试一次（镜像只是搬运，签名与哈希校验不变）。启动检查发现新版本后先静默下载并校验，完成后询问是否安装；选择稍后可在设置页点“安装已下载更新”。0.15.0 → 0.16.0 的完整流程（下载、校验、安装目录里的程序复验并替换、以新版本重启）已在本机真实跑通。
 
 - **规则库 / 指纹库 / 弹窗规则**：`<来源>/rules|fingerprints|popups/manifest.json`。签名可信、版本高于当前、逐文件哈希一致后整体切换到数据目录的 `updates\<kind>`。直接把签好名的目录提交到仓库即可，GitHub 的 raw 地址就是更新源。
 - **程序本身**：`<来源>/release/latest.json`（版本、压缩包名、下载地址、SHA-256、大小、签名，用数据签名密钥签发）。发现更高版本后先在后台下载并校验，完成后再询问是否安装，分三步：① 界面下载压缩包（流式核对大小与哈希）并把签名的发布信息存在旁边，用户确认安装后才启动更新并退出；② **安装目录里已有的** CleanSweep.exe（可信位置；安装目录不可写或装有提权服务时弹 UAC）以独占方式打开压缩包，重新校验发布信息签名、版本只升、大小与哈希、条目路径和其中数据集的签名，解压到安装目录下的 `.update-stage`；③ 那里的新程序等旧进程退出、停提权服务，把旧文件改名到 `.update-backup` 再复制新文件，任何失败全部还原并恢复服务；成功后启动新版本并清理。替换只涉及安装清单 `install-files.txt` 里的文件，不跟随安装目录内的 Junction / 符号链接。已下载的安装包在重新核对长度与哈希后可复用；选择稍后不会退出程序，下载失败也不会弹出安装确认。
 
 设置页提供下载百分比、“取消程序更新”和“检查 / 重试更新”。已下载完成的包会记录来源，重启时先从本地恢复，重新验证签名、版本、大小与哈希后显示安装入口；关闭启动检查也会恢复本地包。联网检查失败时保留已准备好的安装包。清理、扫描、隔离区操作等页面任务或规则库更新运行期间会暂缓安装，任务结束后可手动点击“安装已下载更新”。设置页也可展开查看版本说明。未完成的下载重试时重新下载，完整且校验通过的包可复用。实现与验收记录见 [自动更新完善说明](docs/自动更新完善-2026-10-02.md)。
 
-发布一个可自动更新的版本：
-
-```powershell
-powershell -File tools/release.ps1 -Repo owner/repo -Notes "更新说明"   # publish → zip → 签名生成 release/latest.json
-git add release/latest.json; git commit -m "release v0.19.0"; git push
-# 在 GitHub 创建 tag v0.19.0 的 Release，上传 publish/CleanSweep-win-x64-0.19.0.zip（地址须与 latest.json 里的 url 一致）
-```
+发布时先验证公开附件，再推送 `release/latest.json`；完整步骤见[发布流程](docs/发布流程.md)。
 
 压缩包没有代码签名时 SmartScreen 仍会警告，但自更新通道本身不依赖代码签名：发布信息与数据集的 ECDSA 签名保证下载的内容确实是持有私钥的人发布的。
 
@@ -143,7 +144,7 @@ src/CleanSweep.Service/   提权服务宿主（Windows 服务，--install / --un
 rules/                    清理规则库（system / browsers / apps / dev）
 fingerprints/             应用指纹库（目录 → 应用 → 卸载检测方式与风险标志）
 popups/                   弹窗拦截规则（进程名 / 窗口类名 / 标题特征，可阻止的进程名单）
-tools/                    发布 / 签名 / 安装脚本，数据集签名工具（CleanSweep.SignData），开发签名密钥（keys/）
+tools/                    发布 / 签名 / 安装脚本，数据集签名工具（CleanSweep.SignData）；正式私钥在仓库外
 installer/                Inno Setup 安装器脚本
 tests/CleanSweep.Core.Tests/  单元测试，含 Junction 毁盘防护、恶意规则拒绝、真实 reg.exe 备份还原、真实机器只读扫描、提权服务安全测试
 docs/                     产品设计文档与审查报告
@@ -169,7 +170,7 @@ docs/                     产品设计文档与审查报告
 
 ## 安全设计要点
 
-- 任何文件删除都先移入同卷隔离区目录 `$CleanSweep.Quarantine`，默认保留 30 天
+- 普通文件清理先移入同卷隔离区 `$CleanSweep.Quarantine`，默认保留 30 天，超容量可能提前淘汰；永久删除、回收站清空、粉碎与系统命令另行说明恢复边界
 - 清理前重新核对文件路径、大小、修改时间，扫描后发生变化的文件跳过
 - 递归遍历与删除永不进入 Junction、符号链接、挂载点，包括扫描根目录本身；删除前向内核查询文件真实路径，与逻辑路径不一致即拒绝
 - 隔离区目录创建时重设 ACL，只允许 SYSTEM、Administrators 与当前用户访问，防止其他本地用户篡改待恢复内容
@@ -206,4 +207,4 @@ docs/                     产品设计文档与审查报告
 - 文件粉碎与空闲空间擦除不经隔离区、不可恢复：粉碎只接受通过护栏的普通文件并在 SSD 上明确提示；空闲空间擦除只对确认为机械盘的卷提供
 - 所有系统工具命令（defrag、chkntfs、powercfg、netsh、pnputil、wusa、sfc、DISM、wsreset）只运行 System32 下的程序，参数由代码里的固定操作表生成并严格校验（驱动器号、oemNN.inf、KB 号、GUID）；固态盘绝不做碎片整理
 - 结束进程、服务优化、右键菜单、后台权限、弹窗阻止都有引擎内置的保护名单（系统关键进程、安全服务、浏览器 / IM / IDE 等），规则与用户都不能覆盖；服务只改为手动启动，绝不设为"已禁用"
-- 安全审查报告与修复状态见 [docs/安全审查-2026-09-28.md](docs/安全审查-2026-09-28.md)、[docs/全量审查-2026-09-29.md](docs/全量审查-2026-09-29.md)（含对 M3–M6 新模块的第二轮同类边界复查）、[docs/更新代码复审-2026-09-29.md](docs/更新代码复审-2026-09-29.md) 与 [docs/三轮代码复审-2026-09-30.md](docs/三轮代码复审-2026-09-30.md)（含程序自更新 N11–N13）
+- 历次审查及修复证据见[历史归档](docs/archive/README.md)；当前版本的验证范围见[当前状态](docs/当前状态.md)。

@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.IO;
+using Microsoft.Win32;
 using System.Windows;
 using CleanSweep.App.Helpers;
 using CleanSweep.App.Services;
@@ -15,10 +17,97 @@ public sealed partial class CleanPageViewModel : ObservableObject
 {
     private readonly AppServices _s;
     private readonly Func<IScanner[]> _scanners;
+    private Func<IScanner[]>? _scopedScanners;
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasScanScope))]
+    private string? _scanScopeText;
+    public bool HasScanScope => _scopedScanners is not null;
+
+    /// <summary>Only change scope while idle; clear old actionable rows immediately.</summary>
+    public bool TrySetScanScope(Func<IScanner[]>? scanners, string? description)
+    {
+        if (IsBusy) return false;
+        _scopedScanners = scanners;
+        ScanScopeText = scanners is null ? null : description;
+        OnPropertyChanged(nameof(HasScanScope));
+        ClearGroups();
+        HasResults = false;
+        Note = null;
+        FilterText = "";
+        RiskFilter = CleanRiskFilter.All;
+        Status = "扫描范围已更改，请开始扫描。";
+        return true;
+    }
+
+    [RelayCommand(CanExecute = nameof(CanScan))]
+    private void ScanAll()
+    {
+        if (TrySetScanScope(null, null)) ScanCommand.Execute(null);
+    }
     private readonly Func<string?>? _postScanNote;
     private readonly Dictionary<ScanGroupViewModel, CleanSelectionTracker> _selectionTrackers = new();
     private readonly HashSet<ScanGroupViewModel> _observedGroups = new();
     private bool _applyingFilter;
+    private long _operationId;
+    private readonly Func<IProgress<ScanProgress>, CancellationToken, Task<IReadOnlyList<ScanItemViewModel>>> _scanRows;
+    internal CleanExecutionReport? ExecutionReport { get; private set; }
+    public ObservableCollection<CleanReportRow> ReportRows { get; } = new();
+    public IReadOnlyList<CleanReportFilterOption> ReportFilters { get; } =
+    [
+        new("全部结果", null), new("未完成与跳过", null, true),
+        new("正在使用", CleanIssueKind.InUse), new("权限不足", CleanIssueKind.Permission),
+        new("扫描后变化", CleanIssueKind.Changed), new("备份失败", CleanIssueKind.BackupFailed),
+        new("安全排除", CleanIssueKind.Excluded), new("已不存在", CleanIssueKind.AlreadyAbsent),
+        new("未确认完成", CleanIssueKind.NotProcessed), new("其他失败", CleanIssueKind.Failure),
+    ];
+    [ObservableProperty] private CleanReportFilterOption _reportFilter = new("全部结果", null);
+    [ObservableProperty] private bool _hasExecutionReport;
+    [ObservableProperty] private string _reportCountText = "";
+    [ObservableProperty] private string _reportActionStatus = "";
+
+    partial void OnReportFilterChanged(CleanReportFilterOption value) => RefreshReportRows();
+
+    private void RefreshReportRows()
+    {
+        ReportRows.Clear();
+        if (ExecutionReport is null) return;
+        foreach (var row in ExecutionReport.Rows.Where(r => ReportFilter.Kind is { } kind
+            ? r.Kind == kind : !ReportFilter.ProblemsOnly || r.Kind is not null)) ReportRows.Add(row);
+        ReportCountText = $"显示 {ReportRows.Count}/{ExecutionReport.Rows.Count} 条；导出包含全部结果，不受此筛选影响。";
+    }
+
+    internal void SetExecutionReport(CleanExecutionReport report)
+    {
+        ExecutionReport = report;
+        LastReport = report.Summary;
+        HasReportProblems = report.Cancelled || report.Items.Any(i => !i.Complete)
+            || report.Rows.Any(r => r.Kind is not null and not CleanIssueKind.AlreadyAbsent);
+        HasExecutionReport = true;
+        ReportFilter = ReportFilters[0];
+        RefreshReportRows();
+        RescanIncompleteCommand.NotifyCanExecuteChanged();
+        ExportReportCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanRescanIncomplete => !IsBusy && ExecutionReport?.IncompleteIds.Count > 0;
+    private bool CanExportReport => !IsBusy && ExecutionReport is not null;
+
+    [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanRescanIncomplete))]
+    private Task RescanIncompleteAsync(CancellationToken ct) => ScanCoreAsync(ct, ExecutionReport!.IncompleteIds);
+
+    [RelayCommand(CanExecute = nameof(CanExportReport))]
+    private void ExportReport()
+    {
+        var dialog = new SaveFileDialog { Title = "导出清理结果（包含本机路径）", Filter = "JSON 报告 (*.json)|*.json",
+            FileName = $"CleanSweep-result-{DateTime.Now:yyyyMMdd-HHmmss}.json", DefaultExt = ".json" };
+        if (dialog.ShowDialog() != true) return;
+        try
+        {
+            File.WriteAllText(dialog.FileName, ExecutionReport!.ToJson(), new System.Text.UTF8Encoding(false));
+            ReportActionStatus = "结果已导出。报告包含本机路径，分享前请检查。";
+        }
+        catch (Exception ex) { ReportActionStatus = "导出失败：" + ex.Message; }
+    }
 
     [ObservableProperty]
     private string? _selectionSaveError;
@@ -35,7 +124,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     public event EventHandler? ScanCompleted;
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(CleanCommand), nameof(SelectSafeOnlyCommand), nameof(SelectNoneCommand), nameof(IgnoreItemCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ScanCommand), nameof(ScanAllCommand), nameof(CleanCommand), nameof(SelectSafeOnlyCommand), nameof(SelectNoneCommand), nameof(IgnoreItemCommand), nameof(RescanIncompleteCommand), nameof(ExportReportCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -59,13 +148,6 @@ public sealed partial class CleanPageViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _hasReportProblems;
-
-    /// <summary>上次清理的失败 / 占用明细（页面内展开查看，为空时不显示）。</summary>
-    [ObservableProperty]
-    private string? _problemDetail;
-
-    [ObservableProperty]
-    private string _problemTitle = "";
 
     /// <summary>结果筛选关键字；本次清理只处理筛选后可见的已选项。</summary>
     [ObservableProperty]
@@ -107,6 +189,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
         AppSettings? selectionSettings = null)
     {
         _s = s;
+        _scanRows = ScanRowsAsync;
         Title = title;
         Subtitle = subtitle;
         _scanners = scanners;
@@ -134,6 +217,22 @@ public sealed partial class CleanPageViewModel : ObservableObject
         };
     }
 
+    internal CleanPageViewModel(string title,
+        Func<IProgress<ScanProgress>, CancellationToken, Task<IReadOnlyList<ScanItemViewModel>>> scanRows,
+        AppSettings? settings = null) : this(null!, title, "", () => [], selectionSettings: settings)
+    {
+        _scanRows = scanRows;
+    }
+
+    private async Task<IReadOnlyList<ScanItemViewModel>> ScanRowsAsync(IProgress<ScanProgress> progress, CancellationToken ct)
+    {
+        var items = await _s.Scheduler.RunAsync((_scopedScanners ?? _scanners)(), _s.CreateScanContext(), progress, ct);
+        var elevation = _s.Elevation;
+        if (!elevation.IsElevated) await elevation.ProbeServiceAsync();
+        ct.ThrowIfCancellationRequested();
+        return items.Select(i => new ScanItemViewModel(i, elevation.CanExecute(i), elevation.HintFor(i), Explain)).ToList();
+    }
+
     private void OnGroupSelectionChanged(object? sender, EventArgs e)
     {
         if (!_applyingFilter) UpdateTotals();
@@ -142,43 +241,39 @@ public sealed partial class CleanPageViewModel : ObservableObject
     private bool CanScan => !IsBusy;
 
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanScan))]
-    private async Task ScanAsync(CancellationToken ct)
+    private Task ScanAsync(CancellationToken ct) => ScanCoreAsync(ct);
+
+    private async Task ScanCoreAsync(CancellationToken ct, IReadOnlySet<string>? scope = null)
     {
         IsBusy = true;
+        var operationId = ++_operationId;
         HasResults = false;
-        LastReport = null;
-        HasReportProblems = false;
-        ProblemDetail = null;
+        ReportActionStatus = "";
         ClearGroups();
         Status = "正在扫描…";
 
         var progress = new Progress<ScanProgress>(p =>
         {
+            if (!IsBusy || operationId != _operationId) return;
             ProgressDetail = p.CurrentPath ?? "";
             Status = $"正在扫描… 已发现 {p.ItemsFound} 项，{Format.Bytes(p.BytesFound)}";
         });
 
         try
         {
-            var items = await _s.Scheduler.RunAsync(_scanners(), _s.CreateScanContext(), progress, ct);
-
-            // 非提权运行：需要管理员的条目标出来。提权服务在线时能交给它的条目照常可选，其余禁用并提示重新启动
-            var elevation = _s.Elevation;
-            if (!elevation.IsElevated) await elevation.ProbeServiceAsync();
-            int needAdmin = 0, viaService = 0;
-            foreach (var g in items.GroupBy(i => i.Group))
+            var rows = await _scanRows(progress, ct);
+            ct.ThrowIfCancellationRequested();
+            var matched = rows.Where(r => scope is null || scope.Contains(r.Item.Id)).ToList();
+            int needAdmin = matched.Count(r => !r.CanSelect);
+            int viaService = matched.Count(r => r.ElevationHint == "由提权服务执行");
+            foreach (var g in matched.GroupBy(r => r.Item.Group))
             {
-                var group = new ScanGroupViewModel(g.Key, g.Select(i =>
-                {
-                    var can = elevation.CanExecute(i);
-                    var hint = elevation.HintFor(i);
-                    if (!can) needAdmin++;
-                    else if (elevation.ViaService(i)) viaService++;
-                    return new ScanItemViewModel(i, can, hint, Explain);
-                }));
+                var group = new ScanGroupViewModel(g.Key, g);
                 // 条目很多的分组（如 MUI 缓存孤儿）默认折叠，避免淹没其他分组
                 if (group.Items.Count > 30) group.IsExpanded = false;
                 Groups.Add(group);
+                // Tracker may restore saved choices during Groups.Add. Rescan is preview-only.
+                if (scope is not null || HasScanScope) foreach (var row in group.Items) row.IsSelected = false;
             }
 
             HasResults = Groups.Count > 0;
@@ -186,6 +281,10 @@ public sealed partial class CleanPageViewModel : ObservableObject
             Status = HasResults
                 ? $"扫描完成：{Groups.Sum(g => g.Items.Count)} 项，共 {TotalText}。"
                 : "扫描完成，没有发现可清理的内容。";
+            if (scope is not null)
+                Status = $"重新扫描完成：找到 {matched.Count} 个原未完成项目，已全部取消勾选，请核对最新内容后选择。未再次检出的项目不代表此前删除成功。";
+            else if (HasScanScope)
+                Status = $"定向预览完成：找到 {matched.Count} 项，已全部取消勾选，请核对后选择。没有结果可能是缺少卸载依据或规则尚未覆盖。";
             if (needAdmin > 0) Status += $" 其中 {needAdmin} 项需要管理员权限，已禁用；点击左下角“以管理员身份重新启动”后可清理。";
             if (viaService > 0) Status += $" {viaService} 项将由提权服务执行。";
             try { Note = _postScanNote?.Invoke(); } catch { Note = null; }
@@ -244,6 +343,7 @@ public sealed partial class CleanPageViewModel : ObservableObject
     {
         if (ScanCommand.IsRunning) ScanCancelCommand.Execute(null);
         if (CleanCommand.IsRunning) CleanCancelCommand.Execute(null);
+        if (RescanIncompleteCommand.IsRunning) RescanIncompleteCancelCommand.Execute(null);
     }
 
     [RelayCommand(IncludeCancelCommand = true, CanExecute = nameof(CanClean))]
@@ -274,43 +374,46 @@ public sealed partial class CleanPageViewModel : ObservableObject
         if (MessageBox.Show(msg, "确认清理", MessageBoxButton.OKCancel, icon) != MessageBoxResult.OK) return;
 
         IsBusy = true;
+        var operationId = ++_operationId;
         Status = "正在清理…";
+        ReportActionStatus = "";
+        var report = new CleanReport();
+        var serviceOutcomes = new Dictionary<string, bool>(StringComparer.Ordinal);
+        var serviceIssues = new List<CleanFailure>();
         try
         {
             var progress = new Progress<CleanProgress>(p =>
             {
+                if (!IsBusy || operationId != _operationId) return;
                 ProgressDetail = p.CurrentItem;
                 Status = $"正在清理… {p.Done}/{p.Total}，已处理 {Format.Bytes(p.ProcessedBytes)}";
             });
 
-            CleanReport report;
             var incomplete = new HashSet<string>(StringComparer.Ordinal);
             var serviceMessages = new List<string>();
             long serviceBytes = 0;
             try
             {
-                report = localItems.Count > 0
-                    ? await _s.Engine.CleanAsync(localItems.Select(i => i.Item).ToList(), progress, ct)
-                    : new CleanReport();
-                incomplete.UnionWith(report.IncompleteItemIds);
-
-                if (serviceItems.Count > 0)
-                {
-                    Status = $"正在通过提权服务清理 {serviceItems.Count} 项…";
-                    var (outcomes, messages, bytes) = await _s.Elevation.RunViaServiceAsync(serviceItems.Select(i => i.Item).ToList(), ct);
-                    serviceMessages = messages;
-                    serviceBytes = bytes;
-                    foreach (var vm in serviceItems)
-                        if (!outcomes.TryGetValue(vm.Item.Id, out var ok) || !ok) incomplete.Add(vm.Item.Id);
-                }
+                if (localItems.Count > 0)
+                    report = await _s.Engine.CleanAsync(localItems.Select(i => i.Item).ToList(), progress, ct);
             }
-            catch (OperationCanceledException)
+            catch (CleanCancelledException ex) { report = ex.Report; }
+
+            if (serviceItems.Count > 0 && !report.Cancelled)
             {
-                // 取消后列表内容可能已经部分过期：统一取消勾选，提示重新扫描
-                foreach (var vm in selected) vm.IsSelected = false;
-                UpdateTotals();
-                Status = "已取消。已处理的文件在隔离区，列表中的项目可能已部分处理，请重新扫描。";
-                return;
+                Status = $"正在通过提权服务清理 {serviceItems.Count} 项…";
+                var result = await _s.Elevation.RunViaServiceAsync(serviceItems.Select(i => i.Item).ToList(), ct);
+                serviceMessages = result.Messages;
+                serviceBytes = result.QuarantinedBytes;
+                serviceOutcomes = result.Outcomes;
+                serviceIssues = result.Issues;
+                report.Cancelled |= result.Cancelled;
+            }
+            foreach (var vm in selected)
+            {
+                var complete = serviceItems.Contains(vm) ? serviceOutcomes.GetValueOrDefault(vm.Item.Id)
+                    : report.Outcomes.TryGetValue(vm.Item.Id, out var outcome) && outcome.Complete && !outcome.Untouched;
+                if (!complete) incomplete.Add(vm.Item.Id);
             }
 
             // 按引擎给出的逐条结果更新列表：只有全部文件都成功处理的条目才移除；有失败、有跳过（扫描后变化、白名单）
@@ -335,37 +438,33 @@ public sealed partial class CleanPageViewModel : ObservableObject
             if (report.RegistryEntriesAlreadyAbsent > 0) summary += $"，{report.RegistryEntriesAlreadyAbsent} 项注册表目标已不存在，无需清理（已从列表移除）";
             if (report.FreedBytes > 0) summary += $"，直接释放 {Format.Bytes(report.FreedBytes)}";
             if (report.InUse > 0) summary += $"，{report.InUse} 个文件正在被其他程序使用，这次跳过（关闭相关程序后重新扫描即可）";
-            if (report.Skipped > 0) summary += $"，跳过 {report.Skipped} 个已变化或白名单内的文件（所在项目保留在列表中）";
+            if (report.Skipped > 0) summary += $"，跳过 {report.Skipped} 个已变化、已不存在或被安全排除的文件（所在项目保留在列表中）";
             if (report.Failures.Count > 0) summary += $"，{report.Failures.Count} 项失败（仍保留在列表中）";
-            if (serviceItems.Count > 0) summary += $"；提权服务处理 {serviceItems.Count} 项（{Format.Bytes(serviceBytes)}）" + (serviceMessages.Count > 0 ? $"，{serviceMessages.Count} 条问题" : "");
+            if (serviceItems.Count > 0) summary += $"；提权服务请求 {serviceItems.Count} 项（{Format.Bytes(serviceBytes)}）" + (serviceMessages.Count > 0 ? $"，{serviceMessages.Count} 条问题" : "");
             summary += $"。耗时 {report.Elapsed.TotalSeconds:0.#} 秒。";
 
             HasReportProblems = incomplete.Count > 0 || report.Failures.Count > 0 || serviceMessages.Count > 0;
             LastReport = summary;
             Status = incomplete.Count > 0 ? "清理完成，部分项目未完全处理。重新扫描可刷新这些项目的内容。" : "清理完成。";
 
-            // 失败与占用明细放在页面内可展开的列表里，不弹模态框；正在使用的文件单独一组，不算失败
-            var lines = new List<string>();
-            var problems = report.Failures.Select(f => $"• {f.Path ?? f.ItemDisplayName}：{f.Reason}").Concat(serviceMessages.Select(m => "• " + m)).ToList();
-            if (problems.Count > 0)
+            if (report.Cancelled)
             {
-                lines.Add($"未能清理（{problems.Count} 项）：");
-                lines.AddRange(problems.Take(50));
-                if (problems.Count > 50) lines.Add($"… 另有 {problems.Count - 50} 项，完整记录见操作日志");
+                summary = "清理已取消。" + summary;
+                Status = "已取消，已返回的结果保留如下；未确认完成的项目请重新扫描。";
             }
-            if (report.InUseFiles.Count > 0)
-            {
-                if (lines.Count > 0) lines.Add("");
-                lines.Add($"正在被其他程序使用，这次跳过（{report.InUseFiles.Count} 个）：");
-                lines.AddRange(report.InUseFiles.Take(30).Select(f => "• " + (f.Path ?? f.ItemDisplayName)));
-                if (report.InUseFiles.Count > 30) lines.Add($"… 另有 {report.InUseFiles.Count - 30} 个");
-            }
-            ProblemDetail = lines.Count > 0 ? string.Join("\n", lines) : null;
-            ProblemTitle = problems.Count > 0 ? $"查看未能清理的 {problems.Count} 项" : $"查看正在使用的 {report.InUseFiles.Count} 个文件";
+            SetExecutionReport(CleanExecutionReport.Create(Title, selected.Select(v => v.Item).ToList(), report,
+                serviceItems.Select(v => v.Item.Id).ToHashSet(StringComparer.Ordinal), serviceOutcomes, serviceIssues, summary));
+
         }
         catch (Exception ex)
         {
             Status = $"清理出错：{ex.Message}";
+            foreach (var vm in selected) vm.IsSelected = false;
+            UpdateTotals();
+            // A fatal error may have interrupted a write before a report was returned. Keep uncertainty explicit.
+            serviceIssues.Add(new("execution", "本次清理", null, ex.Message, CleanIssueKind.NotProcessed, ex.HResult));
+            SetExecutionReport(CleanExecutionReport.Create(Title, selected.Select(v => v.Item).ToList(), report,
+                serviceItems.Select(v => v.Item.Id).ToHashSet(StringComparer.Ordinal), serviceOutcomes, serviceIssues, Status));
         }
         finally
         {
@@ -439,3 +538,5 @@ public sealed partial class CleanPageViewModel : ObservableObject
         HasNoVisibleResults = false;
     }
 }
+
+public sealed record CleanReportFilterOption(string Label, CleanIssueKind? Kind, bool ProblemsOnly = false);

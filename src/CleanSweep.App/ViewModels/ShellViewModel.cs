@@ -52,6 +52,7 @@ public sealed partial class ShellViewModel : ObservableObject
 {
     private readonly AppServices _s;
     private readonly CleanPageViewModel _residuePage;
+    private readonly CleanPageViewModel _orphanPage;
 
     /// <summary>全部导航项（含固定项），按加入顺序；"跳转到某页"按标题在这里找。</summary>
     public ObservableCollection<NavItem> Items { get; } = new();
@@ -131,8 +132,16 @@ public sealed partial class ShellViewModel : ObservableObject
             s.CreateResidueScanners, ResidueNote);
         _residuePage.ScanCompleted += (_, _) => s.ResidueOptions.OnlyAppName = null;
         Add(new NavItem { Group = "清理", Title = "残留清理", Glyph = "", Page = _residuePage });
+        Add(new NavItem
+        {
+            Group = "清理", Title = "僵尸目录", Glyph = "",
+            Page = _orphanPage = new CleanPageViewModel(s, "僵尸目录（缓存与空目录）",
+                "仅检查当前用户 AppData：有卸载记录且未检测到安装的软件，其已知缓存、日志和真正为空的目录。" +
+                "配置、存档和其他非空数据目录不列入；首次扫描不默认勾选。清理前再次复核，文件移入隔离区。", s.CreateOrphanDirectoryScanners,
+                () => "没有卸载记录或规则未覆盖的目录不会列出；没有结果不代表没有其他残留。安装清单读取不足时也会停止判定。"),
+        });
 
-        Add(new NavItem { Group = "管理", Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor) });
+        Add(new NavItem { Group = "管理", Title = "软件卸载", Glyph = "", Page = new UninstallViewModel(s, ScanResidueFor, name => ScanOrphansFor([name])) });
         Add(new NavItem
         {
             Group = "清理", Title = "开发者缓存", Glyph = "",
@@ -212,14 +221,30 @@ public sealed partial class ShellViewModel : ObservableObject
         if (item is not null) item.IsSelected = true;
     }
 
+    public void ScanOrphansFor(IReadOnlyCollection<string> appNames)
+    {
+        var names = appNames.Where(n => !string.IsNullOrWhiteSpace(n)).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        if (names.Length == 0) return;
+        var label = "当前仅预览：" + string.Join("、", names) + "。每次扫描后均需重新勾选。";
+        if (!_orphanPage.TrySetScanScope(() => _s.CreateOrphanDirectoryScanners(names), label))
+        {
+            MessageBox.Show("僵尸目录页面正在扫描或清理。请等待完成后，再从软件卸载页预览，或在僵尸目录页扫描全部应用。",
+                "当前任务尚未结束", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        NavigateTo("僵尸目录");
+        _orphanPage.ScanCommand.Execute(null);
+    }
+
     private void OnAppsRemoved(object? sender, IReadOnlyList<InstalledApp> removed)
     {
-        var app = removed[0];
+        if (removed.Count == 0) return;
+        var appNames = removed.Select(a => a.Name).ToArray();
         Application.Current?.Dispatcher.BeginInvoke(() =>
         {
             var names = string.Join("、", removed.Select(a => a.Name).Take(3)) + (removed.Count > 3 ? $" 等 {removed.Count} 个应用" : "");
-            var r = MessageBox.Show($"检测到“{names}”已卸载。现在扫描它遗留在用户目录中的数据？", "卸载后残留提醒", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (r == MessageBoxResult.Yes) ScanResidueFor(app.Name);
+            var r = MessageBox.Show($"检测到“{names}”已卸载。现在预览这些软件的缓存和空目录残留？\n\n预览不会自动清理；个人数据目录保留。", "卸载后残留提醒", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (r == MessageBoxResult.Yes) ScanOrphansFor(appNames);
         });
     }
 

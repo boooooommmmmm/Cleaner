@@ -53,12 +53,25 @@ public sealed partial class UninstallViewModel : ObservableObject
 {
     private readonly AppServices _s;
     private readonly Action<string> _scanResidueFor;
+    private readonly Action<string> _previewOrphansFor;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PreviewLastUninstallCommand))]
+    private string? _lastUninstalledName;
+
+    private bool CanPreviewLastUninstall => !IsBusy && !string.IsNullOrWhiteSpace(LastUninstalledName);
+
+    [RelayCommand(CanExecute = nameof(CanPreviewLastUninstall))]
+    private void PreviewLastUninstall()
+    {
+        if (CanPreviewLastUninstall) _previewOrphansFor(LastUninstalledName!);
+    }
 
     public ObservableCollection<UninstallRow> Rows { get; } = new();
     public ICollectionView View { get; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(RefreshCommand), nameof(UninstallCommand), nameof(UninstallQuietCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshCommand), nameof(UninstallCommand), nameof(UninstallQuietCommand), nameof(RemoveEntryCommand), nameof(PreviewLastUninstallCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -84,10 +97,11 @@ public sealed partial class UninstallViewModel : ObservableObject
 
     public bool HasScanned { get; private set; }
 
-    public UninstallViewModel(AppServices s, Action<string> scanResidueFor)
+    public UninstallViewModel(AppServices s, Action<string> scanResidueFor, Action<string> previewOrphansFor)
     {
         _s = s;
         _scanResidueFor = scanResidueFor;
+        _previewOrphansFor = previewOrphansFor;
         View = CollectionViewSource.GetDefaultView(Rows);
         View.Filter = Filter;
         View.SortDescriptions.Add(new SortDescription(nameof(UninstallRow.Name), ListSortDirection.Ascending));
@@ -124,7 +138,7 @@ public sealed partial class UninstallViewModel : ObservableObject
             HasScanned = true;
             var bloat = Rows.Count(r => r.IsBloatware);
             Summary = $"{snap.Apps.Count(a => !a.IsSystemComponent)} 个应用（另有 {snap.Apps.Count(a => a.IsSystemComponent)} 个系统组件）" + (bloat > 0 ? $"，{bloat} 个疑似预装软件" : "");
-            Status = "卸载会调用软件自己的卸载程序，请按其提示操作；完成后可到“残留清理”处理遗留的用户数据。";
+            Status = "卸载会调用软件自己的卸载程序，请按其提示操作；完成后可预览缓存和空目录残留。";
         }
         catch (Exception ex)
         {
@@ -150,10 +164,11 @@ public sealed partial class UninstallViewModel : ObservableObject
         try
         {
             var backup = await Task.Run(() => _s.Uninstaller.RemoveEntry(row.App, _s.RegistryOps));
-            Status = $"已移除“{row.Name}”的卸载登记项（备份 {backup}）。";
+            LastUninstalledName = row.Name;
             await RefreshAsync();
-            if (MessageBox.Show($"“{row.Name}”的登记项已移除。现在扫描它遗留在用户目录中的数据？", "扫描残留", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                _scanResidueFor(row.Name);
+            Status = $"已移除“{row.Name}”的卸载登记项（备份 {backup}）。程序目录未删除，可预览缓存和空目录残留。";
+            if (MessageBox.Show($"“{row.Name}”的登记项已移除。现在预览它的缓存和空目录残留？\n\n仍会检查安装与运行状态；预览不会自动清理。", "预览卸载残留", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                _previewOrphansFor(row.Name);
         }
         catch (Exception ex)
         {
@@ -183,7 +198,7 @@ public sealed partial class UninstallViewModel : ObservableObject
 
         var msg = $"卸载“{row.Name}”？\n\n将运行它的官方卸载程序：\n{cmd.Exe} {cmd.Args}\n\n" +
                   (quiet ? "静默模式：不显示卸载程序界面，直接执行。" : "请按卸载程序的提示完成操作。") +
-                  "\n\n卸载完成后可在“残留清理”中查看并清理遗留的用户数据。";
+                  "\n\n确认卸载完成后，可预览它的缓存和空目录残留，再选择是否清理。";
         if (MessageBox.Show(msg, "确认卸载", MessageBoxButton.OKCancel, MessageBoxImage.Warning) != MessageBoxResult.OK) return;
 
         IsBusy = true;
@@ -191,12 +206,13 @@ public sealed partial class UninstallViewModel : ObservableObject
         try
         {
             var result = await _s.Uninstaller.RunAsync(row.App, quiet, CancellationToken.None);
-            Status = result.Message;
             if (result.Started) await RefreshAsync();
-            if (result.Started && !result.StillInstalled)
+            Status = result.Message;
+            if (result.Started && result.Completed && !result.StillInstalled)
             {
-                if (MessageBox.Show($"“{row.Name}”已卸载。现在扫描它遗留在用户目录中的数据？", "扫描残留", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
-                    _scanResidueFor(row.Name);
+                LastUninstalledName = row.Name;
+                if (MessageBox.Show($"“{row.Name}”已卸载。现在预览它的缓存和空目录残留？\n\n配置、存档等个人数据目录保留；预览不会自动清理。", "预览卸载残留", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
+                    _previewOrphansFor(row.Name);
             }
         }
         catch (Exception ex)

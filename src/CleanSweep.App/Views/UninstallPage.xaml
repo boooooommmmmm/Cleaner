@@ -18,7 +18,7 @@
         <StackPanel Grid.Row="0">
             <TextBlock Text="软件卸载" Style="{StaticResource Text.Title}"/>
             <TextBlock Style="{StaticResource Text.Subtitle}" Margin="0,4,0,0"
-                       Text="列出注册表、应用商店与用户目录中的已安装软件。卸载只调用软件自己的官方卸载程序，卸载后可一键扫描它遗留的用户数据。"/>
+                       Text="列出注册表、应用商店与用户目录中的已安装软件。卸载调用官方卸载程序，完成后可预览缓存和空目录残留，再手动选择清理。"/>
         </StackPanel>
 
         <Grid Grid.Row="1" Margin="0,18,0,12">
@@ -103,6 +103,10 @@
         </Border>
 
         <StackPanel Grid.Row="4" Margin="0,10,0,0">
+            <WrapPanel Visibility="{Binding LastUninstalledName, Converter={StaticResource NullToVis}}" Margin="0,0,0,8">
+                <TextBlock Text="{Binding LastUninstalledName}" MaxWidth="400" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                <Button Content="预览上次卸载的缓存和空目录" Command="{Binding PreviewLastUninstallCommand}" Margin="12,0,0,0"/>
+            </WrapPanel>
             <ProgressBar IsIndeterminate="{Binding IsBusy}" Height="3" BorderThickness="0" Background="Transparent"
                          Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}" Margin="0,0,0,6"/>
             <TextBlock Text="{Binding Status}" Style="{StaticResource Text.Secondary}" TextWrapping="Wrap"

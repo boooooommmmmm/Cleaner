@@ -10,7 +10,7 @@ using Microsoft.Data.Sqlite;
 namespace CleanSweep.Core.Tests;
 
 /// <summary>
-/// 2026-09-28 安全审查（docs/安全审查-2026-09-28.md）的回归基线：审查用例反转为"必须安全"的断言。
+/// 2026-09-28 安全审查（docs/archive/安全审查-2026-09-28.md）的回归基线：审查用例反转为"必须安全"的断言。
 /// Junction 创建失败一律断言失败，不允许静默跳过。
 /// </summary>
 public sealed class SecurityFixTests : IDisposable

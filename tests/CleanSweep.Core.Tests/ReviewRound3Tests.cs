@@ -21,7 +21,7 @@ using Microsoft.Win32;
 namespace CleanSweep.Core.Tests;
 
 /// <summary>
-/// docs/更新代码复审-2026-09-29.md（R01–R15）与 docs/三轮代码复审-2026-09-30.md（N01–N10）的回归基线：
+/// docs/archive/更新代码复审-2026-09-29.md（R01–R15）与 docs/archive/三轮代码复审-2026-09-30.md（N01–N10）的回归基线：
 /// 把"缺陷成功复现即通过"的探针反转为"缺陷不再出现"。
 /// </summary>
 public sealed class ReviewRound3Tests : IDisposable
@@ -127,7 +127,7 @@ public sealed class ReviewRound3Tests : IDisposable
 
         // 扫描后软件被重新安装：注册表值一个字节都没变，但程序回来了
         _t.File(exe, "MZ");
-        var ex = Assert.Throws<InvalidOperationException>(() => ops.DeleteKey(new RegistryTarget(key, RegistryView.Registry64, null), "test", snap, exe));
+        var ex = Assert.Throws<CleanSweep.Core.Cleaning.CleanTargetChangedException>(() => ops.DeleteKey(new RegistryTarget(key, RegistryView.Registry64, null), "test", snap, exe));
         Assert.Contains("删除依据已不成立", ex.Message);
         Assert.True(RegistryPath.Exists(key, RegistryView.Registry64));
 

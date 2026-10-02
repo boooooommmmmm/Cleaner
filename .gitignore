@@ -26,6 +26,10 @@ mono_crash.*
 # 程序自更新读取的发布信息 release/latest.json 必须入库（上面的模板规则会忽略 release 目录）
 !/release/
 [Rr]eleases/
+# 发布说明和验收记录属于文档，不能被构建输出目录规则忽略。
+!/docs/releases/
+/docs/releases/*
+!/docs/releases/*.md
 x64/
 x86/
 [Ww][Ii][Nn]32/

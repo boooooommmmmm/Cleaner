@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using CleanSweep.Core.Backup;
+using CleanSweep.Core.Cleaning;
 using CleanSweep.Core.Model;
 using CleanSweep.Core.Safety;
 using Microsoft.Win32;
@@ -24,9 +25,15 @@ public sealed class RegistryOps
     /// <summary>快照必须一致；删除依据（扫描时缺失的程序）重新出现即拒绝。</summary>
     private static void Require(string? expectedSnapshot, string? currentSnapshot, string? missingPath)
     {
-        if (RegistrySnapshot.Check(expectedSnapshot, currentSnapshot) is { } bad) throw new InvalidOperationException(bad);
+        if (RegistrySnapshot.Check(expectedSnapshot, currentSnapshot) is { } bad)
+        {
+            if (expectedSnapshot is not null && currentSnapshot is not null
+                && expectedSnapshot != RegistrySnapshot.Truncated && currentSnapshot != RegistrySnapshot.Truncated)
+                throw new CleanTargetChangedException(bad);
+            throw new InvalidOperationException(bad);
+        }
         if (missingPath is not null && RegistryProbe.ProbePath(missingPath) != FileProbe.Missing)
-            throw new InvalidOperationException($"删除依据已不成立：{missingPath} 现在存在（软件可能已重新安装或修复），请重新扫描");
+            throw new CleanTargetChangedException($"删除依据已不成立：{missingPath} 现在存在（软件可能已重新安装或修复），请重新扫描");
     }
 
     /// <summary>删除值。返回备份文件名。expectedSnapshot 为扫描时快照，不一致即拒绝。</summary>
@@ -66,12 +73,12 @@ public sealed class RegistryOps
         return Path.GetFileName(rec.File);
     }
 
-    private static RegistryBackupRecord BeforeDeleteBackup(Func<RegistryBackupRecord> backup)
+    private static T BeforeDeleteBackup<T>(Func<T> backup)
     {
         try { return backup(); }
         catch (Exception ex)
         {
-            throw new InvalidOperationException("备份阶段失败，未执行删除：" + ex.Message, ex);
+            throw new CleanBackupException("备份阶段失败，未执行删除：" + ex.Message, ex);
         }
     }
 
@@ -96,7 +103,7 @@ public sealed class RegistryOps
             if (start is 0 or 1) throw new InvalidOperationException("启动类型为 Boot / System 的服务拒绝删除");
         }
 
-        var rec = _backup.Backup(keyPath, reason);
+        var rec = BeforeDeleteBackup(() => _backup.Backup(keyPath, reason));
 
         var scm = OpenSCManagerW(null, null, ScManagerConnect);
         if (scm == IntPtr.Zero) throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error(), "无法连接服务控制管理器");
@@ -139,7 +146,7 @@ public sealed class RegistryOps
         string xml = task.Xml;
         Require(expectedSnapshot, RegistrySnapshot.OfTaskXml(xml), missingPath);
 
-        var file = WriteTaskBackup(taskPath, xml, reason);
+        var file = BeforeDeleteBackup(() => WriteTaskBackup(taskPath, xml, reason));
         folder.DeleteTask(name, 0);
         return Path.GetFileName(file);
     }

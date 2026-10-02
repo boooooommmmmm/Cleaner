@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using CleanSweep.Core.Elevation;
+using CleanSweep.Core.Cleaning;
 using CleanSweep.Core.Model;
 using CleanSweep.Core.Safety;
 using CleanSweep.Core.Storage;
@@ -74,50 +75,76 @@ public sealed class ElevationContext : INotifyPropertyChanged
     /// 把选中条目按规则分组交给提权服务，每个条目连同用户确认时的内容快照一起发送。
     /// 返回每个条目的结果：true 只在服务明确报告"done"时成立；服务没提到的条目一律视为未完成。
     /// </summary>
-    public async Task<(Dictionary<string, bool> Outcomes, List<string> Messages, long QuarantinedBytes)> RunViaServiceAsync(IReadOnlyList<ScanItem> items, CancellationToken ct)
+    public async Task<ServiceCleanResult> RunViaServiceAsync(IReadOnlyList<ScanItem> items, CancellationToken ct)
     {
-        var outcomes = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        var outcomes = items.ToDictionary(i => i.Id, _ => false, StringComparer.OrdinalIgnoreCase);
+        var issues = new List<CleanFailure>();
+        bool cancelled = false;
         var messages = new List<string>();
         long bytes = 0;
         var byId = items.ToDictionary(i => i.Id, StringComparer.OrdinalIgnoreCase);
-        foreach (var group in items.Where(i => i.RuleId is not null).GroupBy(i => i.RuleId!, StringComparer.OrdinalIgnoreCase))
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            var refs = group.Select(i => new ElevationItemRef(i.Id, i.ContentSnapshot())).ToList();
-            foreach (var r in refs) outcomes[r.Id] = false;
-            foreach (var chunk in refs.Chunk(ElevationRequest.MaxItems))
+            foreach (var group in items.Where(i => i.RuleId is not null).GroupBy(i => i.RuleId!, StringComparer.OrdinalIgnoreCase))
             {
-                ElevationResponse response;
-                try
+                ct.ThrowIfCancellationRequested();
+                var refs = group.Select(i => new ElevationItemRef(i.Id, i.ContentSnapshot())).ToList();
+                foreach (var r in refs) outcomes[r.Id] = false;
+                foreach (var chunk in refs.Chunk(ElevationRequest.MaxItems))
                 {
-                    response = await ElevationClient.SendAsync(new ElevationRequest(ElevatedOperation.RunRuleClean, RuleId: group.Key, Items: chunk), TimeSpan.FromMinutes(30), ct: ct).ConfigureAwait(false);
+                    ElevationResponse response;
+                    try
+                    {
+                        response = await ElevationClient.SendAsync(new ElevationRequest(ElevatedOperation.RunRuleClean, RuleId: group.Key, Items: chunk), TimeSpan.FromMinutes(30), ct: ct).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        messages.Add($"规则 {group.Key}：提权服务调用失败：{ex.Message}");
+                        foreach (var request in chunk)
+                        {
+                            var item = byId[request.Id];
+                            issues.Add(new(item.Id, item.DisplayName, item.Path, "提权服务调用失败，执行结果未确认：" + ex.Message, CleanIssueKind.NotProcessed, ex.HResult));
+                        }
+                        ServiceAvailable = false;
+                        continue;
+                    }
+                    var payload = ElevatedOperations.ParsePayload(response.Payload);
+                    if (payload is null)
+                    {
+                        messages.Add($"规则 {group.Key}：{response.Message}");
+                        foreach (var request in chunk)
+                        {
+                            var item = byId[request.Id];
+                            issues.Add(new(item.Id, item.DisplayName, item.Path, response.Message, CleanIssueKind.NotProcessed));
+                        }
+                        continue;
+                    }
+                    bytes += payload.QuarantinedBytes;
+                    foreach (var result in payload.Results)
+                    {
+                        if (!outcomes.ContainsKey(result.ItemId)) continue;
+                        outcomes[result.ItemId] = result.State == ElevatedOperations.StateDone;
+                        if (result.State != ElevatedOperations.StateDone)
+                        {
+                            var item = byId[result.ItemId];
+                            var kind = result.Kind ?? (result.State == ElevatedOperations.StateChanged ? CleanIssueKind.Changed : CleanIssueKind.NotProcessed);
+                            issues.Add(new(item.Id, item.DisplayName, item.Path, result.Reason ?? result.State, kind));
+                        }
+                        if (result.State != ElevatedOperations.StateDone)
+                            messages.Add($"{(byId.TryGetValue(result.ItemId, out var it) ? it.Path ?? it.DisplayName : result.ItemId)}：{result.Reason ?? result.State}");
+                    }
+                    foreach (var f in payload.Failures.Where(f => !payload.Results.Any(r => r.ItemId == f.ItemId && r.Reason == f.Reason)))
+                    {
+                        messages.Add($"{f.Path ?? f.ItemId}：{f.Reason}");
+                        if (byId.TryGetValue(f.ItemId, out var item))
+                            issues.Add(new(item.Id, item.DisplayName, f.Path, f.Reason));
+                    }
                 }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception ex)
-                {
-                    messages.Add($"规则 {group.Key}：提权服务调用失败：{ex.Message}");
-                    ServiceAvailable = false;
-                    continue;
-                }
-                var payload = ElevatedOperations.ParsePayload(response.Payload);
-                if (payload is null)
-                {
-                    messages.Add($"规则 {group.Key}：{response.Message}");
-                    continue;
-                }
-                bytes += payload.QuarantinedBytes;
-                foreach (var result in payload.Results)
-                {
-                    if (!outcomes.ContainsKey(result.ItemId)) continue;
-                    outcomes[result.ItemId] = result.State == ElevatedOperations.StateDone;
-                    if (result.State != ElevatedOperations.StateDone)
-                        messages.Add($"{(byId.TryGetValue(result.ItemId, out var it) ? it.Path ?? it.DisplayName : result.ItemId)}：{result.Reason ?? result.State}");
-                }
-                foreach (var f in payload.Failures.Where(f => !payload.Results.Any(r => r.ItemId == f.ItemId && r.Reason == f.Reason)))
-                    messages.Add($"{f.Path ?? f.ItemId}：{f.Reason}");
             }
         }
-        return (outcomes, messages, bytes);
+        catch (OperationCanceledException) { cancelled = true; }
+        return new ServiceCleanResult(outcomes, messages, bytes, issues, cancelled);
     }
 
     /// <summary>以管理员身份重新启动本程序。返回 null 表示新实例已启动（调用方应退出），否则为失败原因。</summary>
@@ -140,3 +167,5 @@ public sealed class ElevationContext : INotifyPropertyChanged
         }
     }
 }
+
+public sealed record ServiceCleanResult(Dictionary<string, bool> Outcomes, List<string> Messages, long QuarantinedBytes, List<CleanFailure> Issues, bool Cancelled);
