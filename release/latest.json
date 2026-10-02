@@ -1,11 +1,11 @@
 {
-  "version": "0.20.0",
-  "asset": "CleanSweep-win-x64-0.20.0.zip",
-  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.20.0/CleanSweep-win-x64-0.20.0.zip",
-  "sha256": "dbfe4df0e9ea5aaecb1b08781f0aa4e9b7a68c07b977cd678068bb4dd9f1213a",
-  "size": 65453879,
-  "notes": "自动更新增加下载进度、取消与重试、重启恢复已下载包，以及任务运行期间暂缓安装。",
-  "generated": "2026-10-01T18:35:39Z",
+  "version": "0.21.0",
+  "asset": "CleanSweep-win-x64-0.21.0.zip",
+  "url": "https://github.com/boooooommmmmm/Cleaner/releases/download/v0.21.0/CleanSweep-win-x64-0.21.0.zip",
+  "sha256": "583af63cb5b273526df9e22ab4191207a446f018f6a53c40c26e06c94c835036",
+  "size": 65517592,
+  "notes": "清理结果分类与导出、未完成项重新扫描、僵尸目录清理及卸载后定向预览。",
+  "generated": "2026-10-02T09:37:08Z",
   "keyId": "release-2026-09",
-  "signature": "Ph6dIJmDccZYxzXDSDOmqc7p7UWrPa/T3HJW0msemQ8NOIVXKj6S/KgxBVCwtutwKZLftvSrOljjxYzgKBMulQ=="
+  "signature": "ssuXkj2qTmqr4LX/OoNSbdj9PEFWVRuApKwt0EVuxlJlyYtISByTP6M2oRQl2dwkr3Oo7NtfqLHzMW36S2H3Jg=="
 }
